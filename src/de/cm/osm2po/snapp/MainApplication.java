@@ -1,4 +1,4 @@
-package de.cm.osm2po.snapp1;
+package de.cm.osm2po.snapp;
 
 import java.io.File;
 import java.util.Arrays;

@@ -1,8 +1,8 @@
-package de.cm.osm2po.snapp1;
+package de.cm.osm2po.snapp;
 
-import static de.cm.osm2po.snapp1.MarkerType.GPS_MARKER;
-import static de.cm.osm2po.snapp1.MarkerType.SOURCE_MARKER;
-import static de.cm.osm2po.snapp1.MarkerType.TARGET_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
 import android.app.DialogFragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;

@@ -1,4 +1,5 @@
-package de.cm.osm2po.snapp1;
+package de.cm.osm2po.snapp;
+
 
 
 public enum MarkerType {
@@ -6,8 +7,7 @@ public enum MarkerType {
 	TOUCH_MARKER(0, "", "", R.drawable.ic_marker16, false),
 	SOURCE_MARKER(1, "Source", "", R.drawable.ic_source32, true),
 	TARGET_MARKER(2, "Target", "", R.drawable.ic_target32, true),
-	GPS_MARKER(3, "GPS Location", "", R.drawable.ic_gps40, false),
-	SIMU_MARKER(4, "Simulation", "", R.drawable.ic_marker16, false);
+	GPS_MARKER(3, "GPS Location", "", R.drawable.ic_gps40, false);
 
 	private int index;
 	private String title;

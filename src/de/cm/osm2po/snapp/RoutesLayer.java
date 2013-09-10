@@ -1,4 +1,4 @@
-package de.cm.osm2po.snapp1;
+package de.cm.osm2po.snapp;
 
 import org.mapsforge.android.maps.overlay.ArrayWayOverlay;
 import org.mapsforge.android.maps.overlay.OverlayWay;

@@ -1,6 +1,6 @@
-package de.cm.osm2po.snapp1;
+package de.cm.osm2po.snapp;
 
-import static de.cm.osm2po.snapp1.MarkerType.TOUCH_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.TOUCH_MARKER;
 
 import org.mapsforge.android.maps.MapView;
 import org.mapsforge.android.maps.overlay.ArrayItemizedOverlay;
