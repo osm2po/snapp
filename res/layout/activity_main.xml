@@ -1,0 +1,24 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+	tools:context=".MainActivity" >
+
+    
+    
+    <org.mapsforge.android.maps.MapView
+        android:id="@+id/mapView"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent" 
+	    />
+
+    <ToggleButton
+        android:id="@+id/tglBikeCar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="24dp"
+        android:minWidth="32dp"
+        android:textOff="@string/tgl_mode_car"
+        android:textOn="@string/tgl_mode_bike" />
+
+</FrameLayout>

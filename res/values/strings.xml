@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Snapp1</string>
+    <string name="menu_settings">Settings</string>
+
+    <string name="btn_source">Source</string>
+    <string name="btn_target">Target</string>
+    <string name="btn_route">Route</string>
+    
+    <string name="tgl_mode_car">car</string>
+    <string name="tgl_mode_bike">bike</string>
+    
+</resources>
