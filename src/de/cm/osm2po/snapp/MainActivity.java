@@ -9,11 +9,12 @@ import org.mapsforge.android.maps.MapView;
 import org.mapsforge.core.GeoPoint;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import de.cm.osm2po.sd.routing.SdGeoUtils;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -37,22 +38,19 @@ implements MarkerSelectListener, GpsListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		this.app = (MainApplication) this.getApplication();
-		this.app.setGpsListener(this);
+		app = (MainApplication) this.getApplication();
+		app.setGpsListener(this);
 		
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				route();
-			}
+			public void onClick(View v) {route();}
 		});
 		
 		mapView = (MapView) findViewById(R.id.mapView);
 		mapView.setClickable(true);
 		mapView.setBuiltInZoomControls(true);
 		mapView.setMapFile(app.getMapFile());
-		mapView.getController().setZoom(14);
+		mapView.getController().setZoom(15);
 		
 		routesLayer = new RoutesLayer();
 		mapView.getOverlays().add(routesLayer);
@@ -62,6 +60,29 @@ implements MarkerSelectListener, GpsListener {
 
         tpSource = null;
         tpTarget = null;
+        
+        restoreInstanceState();
+	}
+
+	@Override
+    protected void onDestroy() {
+    	super.onDestroy();
+    	app.setGpsListener(null); // UnChain
+    	saveInstanceState();
+    }
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.activity_main, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		if (item.getItemId() == R.id.menu_sleep) {
+			finish();
+		}
+		return true;
 	}
 	
 	@Override
@@ -103,35 +124,22 @@ implements MarkerSelectListener, GpsListener {
 		if (tpSource != null && tpTarget != null) {
 			try {
 				geometry = app.route(tpSource, tpTarget, tglBikeCar.isChecked()); 
-				if (geometry != null) drawRoute();
+				routesLayer.drawRoute(geometry);
 			} catch (Throwable t) {
-				toast("Routing error");
+				toast("Routing error\n" + t.getMessage());
 			}
+		} else {
+			toast("Please set Source and Target");
 		}
 	}
 	
 	private void toast(String msg) {
-		Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 	}
 
-    private void drawRoute() {
-    	int n = geometry.length;
-        GeoPoint[] geoPoints = new GeoPoint[n];
-        for (int i = 0; i < n; i++) {
-        	double lat = SdGeoUtils.toLat(geometry[i]);
-        	double lon = SdGeoUtils.toLon(geometry[i]);
-        	
-        	geoPoints[i] = new GeoPoint(lat, lon);
-        }
-        routesLayer.showRoute(geoPoints);
-    }
-
+    /****************** SaveInstance in Application ************************/
     
-    /****************** Bundle ************************/
-    
-	@Override
-	protected void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
+	private void saveInstanceState() {
 		Bundle bundle = new Bundle();
 		
 		bundle.putInt("zoomLevel", mapView.getMapPosition().getZoomLevel());
@@ -148,15 +156,13 @@ implements MarkerSelectListener, GpsListener {
 		if (geometry != null) {
 			bundle.putLongArray("geometry", geometry);
 		}
-		
-		outState.putBundle("snappBundle", bundle);
+		app.saveBundle(bundle);
 	}
 	
-	@Override
-	protected void onRestoreInstanceState(Bundle savedInstanceState) {
-		super.onRestoreInstanceState(savedInstanceState);
-
-		Bundle bundle = savedInstanceState.getBundle("snappBundle");
+	private void restoreInstanceState() {
+		Bundle bundle = app.restoreBundle();
+		if (null == bundle) return;
+		
     	int zoomLevel = bundle.getInt("zoomLevel");
     	mapView.getController().setZoom(zoomLevel);
     	
@@ -179,7 +185,7 @@ implements MarkerSelectListener, GpsListener {
     	}
     	
     	geometry = bundle.getLongArray("geometry");
-    	if (geometry != null) drawRoute();
+    	routesLayer.drawRoute(geometry);
 	}
     
 }

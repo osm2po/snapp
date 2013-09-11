@@ -6,6 +6,7 @@ import org.mapsforge.core.GeoPoint;
 
 import android.graphics.Color;
 import android.graphics.Paint;
+import de.cm.osm2po.sd.routing.SdGeoUtils;
 
 public class RoutesLayer extends ArrayWayOverlay {
 
@@ -22,9 +23,8 @@ public class RoutesLayer extends ArrayWayOverlay {
         fill.setColor(Color.BLUE);
         fill.setAlpha(127);
         fill.setStrokeWidth(7);
-//        fill.setAntiAlias(true);
+        fill.setAntiAlias(true);
         fill.setStrokeJoin(Paint.Join.ROUND);
-//        fill.setPathEffect(new DashPathEffect(new float[] { 20, 20 }, 0));
  
 		return fill;
 	}
@@ -35,14 +35,24 @@ public class RoutesLayer extends ArrayWayOverlay {
         outline.setStyle(Paint.Style.STROKE);
         outline.setColor(Color.BLACK);
         outline.setAlpha(31);
-//        outline.setAntiAlias(true);
+        outline.setAntiAlias(true);
         outline.setStrokeWidth(11);
         outline.setStrokeJoin(Paint.Join.ROUND);
 
 		return outline;
 	}
 	
-	public void showRoute(GeoPoint[] geoPoints) {
+	public void drawRoute(long[] geometry) {
+		if (null == geometry) return;
+		
+    	int n = geometry.length;
+        GeoPoint[] geoPoints = new GeoPoint[n];
+        for (int i = 0; i < n; i++) {
+        	double lat = SdGeoUtils.toLat(geometry[i]);
+        	double lon = SdGeoUtils.toLon(geometry[i]);
+        	geoPoints[i] = new GeoPoint(lat, lon);
+        }
+		
 		GeoPoint[][] geoWays = new GeoPoint[][]{geoPoints};
 		if (overlayWay != null) removeWay(overlayWay);
 		overlayWay = new OverlayWay(geoWays, defaultFillPaint(), defaultOutlinePaint());

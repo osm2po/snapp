@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">Snapp</string>
-    <string name="menu_settings">Settings</string>
+    <string name="menu_sleep">Sleep</string>
 
     <string name="btn_source">Source</string>
     <string name="btn_target">Target</string>

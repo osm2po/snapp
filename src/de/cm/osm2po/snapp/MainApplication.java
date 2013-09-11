@@ -29,6 +29,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdGuide guide;
 	
 	private File mapFile; // Mapsforge
+	private Bundle bundle; // Tja, restoreInstanceState geht halt nicht immer, daher hier.
 	
 	private GpsListener gpsListener; // es gibt nur einen
 
@@ -38,14 +39,13 @@ public class MainApplication extends Application implements LocationListener, On
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 5, this);
+
+    	tts = new TextToSpeech(this, this);
+    	tts.setLanguage(Locale.GERMAN);
     	
         File sdcard = Environment.getExternalStorageDirectory();
         graph = new SdGraph(new File(sdcard, "maps/snapp.gpt"));
-        this.mapFile = new File(sdcard, "maps/snapp.map");
-        
-		tts = new TextToSpeech(this, this);
-        tts.setLanguage(Locale.GERMAN);
-
+        mapFile = new File(sdcard, "maps/snapp.map");
     }
     
     public File getMapFile() {return mapFile;}
@@ -105,13 +105,12 @@ public class MainApplication extends Application implements LocationListener, On
     public void onGps(double lat, double lon) {
 		if (gpsListener != null) {
 			gpsListener.onLocationChanged(lat, lon);
-		}
-		
-		if (guide != null) {
-			SdAdvicePoint advicePoint = guide.locate(lat, lon, 30);
-			if (advicePoint != null) {
-				String msg = advicePoint.getAdvice();
-				tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+			if (guide != null) {
+				SdAdvicePoint advicePoint = guide.locate(lat, lon, 30);
+				if (advicePoint != null) {
+					String msg = advicePoint.getAdvice();
+					tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+				}
 			}
 		}
     }
@@ -147,6 +146,16 @@ public class MainApplication extends Application implements LocationListener, On
 	
 	@Override
 	public void onInit(int status) {
+	}
+	
+	/****************************** InstanceState *************************/
+	
+	public void saveBundle(Bundle bundle) {
+		this.bundle = bundle;
+	}
+	
+	public Bundle restoreBundle() {
+		return this.bundle;
 	}
 
 }

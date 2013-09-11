@@ -19,6 +19,7 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="de.cm.osm2po.snapp.MainActivity"
+            android:alwaysRetainTaskState="true"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
