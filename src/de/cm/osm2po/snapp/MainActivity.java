@@ -1,8 +1,21 @@
 package de.cm.osm2po.snapp;
 
+import static de.cm.osm2po.snapp.MainApplication.getSdDir;
 import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
+import static de.cm.osm2po.snapp.Utils.readLongs;
+import static de.cm.osm2po.snapp.Utils.readString;
+import static de.cm.osm2po.snapp.Utils.writeLongs;
+import static de.cm.osm2po.snapp.Utils.writeString;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.mapsforge.android.maps.MapActivity;
 import org.mapsforge.android.maps.MapView;
@@ -22,15 +35,13 @@ implements MarkerSelectListener, GpsListener {
 	
 	private RoutesLayer routesLayer;
 	private MarkersLayer markersLayer;
-	
 	private SdTouchPoint tpSource, tpTarget;
 	private long[] geometry;
-	
 	private ToggleButton tglBikeCar;
-	
 	private MainApplication app;
-	
 	private MapView mapView;
+
+	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -139,55 +150,63 @@ implements MarkerSelectListener, GpsListener {
 		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 	}
 
-    /****************** SaveInstance in Application ************************/
+	
+    /****************** SaveInstance secure via File ************************/
     
 	private void saveInstanceState() {
-		Bundle bundle = new Bundle();
-		
-		bundle.putInt("zoomLevel", mapView.getMapPosition().getZoomLevel());
-		GeoPoint center = mapView.getMapPosition().getMapCenter(); 
-		bundle.putDouble("centerLat", center.getLatitude());
-		bundle.putDouble("centerLon", center.getLongitude());
-		
-		if (tpSource != null) {
-			bundle.putString("tpSourceKey", tpSource.getKey());
+		try {
+			OutputStream os = new FileOutputStream(STATE_FILE);
+			DataOutputStream dos = new DataOutputStream(os);
+			dos.writeInt(mapView.getMapPosition().getZoomLevel());
+			GeoPoint center = mapView.getMapPosition().getMapCenter(); 
+			dos.writeDouble(center.getLatitude());
+			dos.writeDouble(center.getLongitude());
+			writeString(tpSource == null ? null : tpSource.getKey(), dos);
+			writeString(tpTarget == null ? null : tpTarget.getKey(), dos);
+			writeLongs(geometry, dos);
+
+		} catch (Exception e) {
+			toast(e.getMessage());
 		}
-		if (tpTarget != null) {
-			bundle.putString("tpTargetKey", tpTarget.getKey());
-		}
-		if (geometry != null) {
-			bundle.putLongArray("geometry", geometry);
-		}
-		app.saveBundle(bundle);
 	}
 	
 	private void restoreInstanceState() {
-		Bundle bundle = app.restoreBundle();
-		if (null == bundle) return;
-		
-    	int zoomLevel = bundle.getInt("zoomLevel");
-    	mapView.getController().setZoom(zoomLevel);
-    	
-    	double centerLat = bundle.getDouble("centerLat");
-    	double centerLon = bundle.getDouble("centerLon");
-    	GeoPoint center = new GeoPoint(centerLat, centerLon);
-    	mapView.setCenter(center);
-    	
-    	String tpSourceKey = bundle.getString("tpSourceKey");
-    	if (tpSourceKey != null) {
-    		tpSource = SdTouchPoint.create(app.getGraph(), tpSourceKey);
-			GeoPoint geoPoint = new GeoPoint(tpSource.getLat(), tpSource.getLon());
-			markersLayer.moveMarker(SOURCE_MARKER, geoPoint);
-    	}
-    	String tpTargetKey = bundle.getString("tpTargetKey");
-    	if (tpTargetKey != null) {
-    		tpTarget = SdTouchPoint.create(app.getGraph(), tpTargetKey);
-			GeoPoint geoPoint = new GeoPoint(tpTarget.getLat(), tpTarget.getLon());
-			markersLayer.moveMarker(TARGET_MARKER, geoPoint);
-    	}
-    	
-    	geometry = bundle.getLongArray("geometry");
-    	routesLayer.drawRoute(geometry);
+		try {
+			if (!STATE_FILE.exists()) return;
+			
+			InputStream is = new FileInputStream(STATE_FILE);
+			DataInputStream dis = new DataInputStream(is);
+			
+			int zoomLevel = dis.readInt();
+			mapView.getController().setZoom(zoomLevel);
+			
+			double centerLat = dis.readDouble();
+			double centerLon = dis.readDouble();
+			GeoPoint center = new GeoPoint(centerLat, centerLon);
+			mapView.setCenter(center);
+			
+	    	String tpSourceKey = readString(dis);
+	    	if (tpSourceKey != null) {
+	    		tpSource = SdTouchPoint.create(app.getGraph(), tpSourceKey);
+				GeoPoint geoPoint = new GeoPoint(tpSource.getLat(), tpSource.getLon());
+				markersLayer.moveMarker(SOURCE_MARKER, geoPoint);
+	    	}
+	    	
+	    	String tpTargetKey = readString(dis);
+	    	if (tpTargetKey != null) {
+	    		tpTarget = SdTouchPoint.create(app.getGraph(), tpTargetKey);
+				GeoPoint geoPoint = new GeoPoint(tpTarget.getLat(), tpTarget.getLon());
+				markersLayer.moveMarker(TARGET_MARKER, geoPoint);
+	    	}
+	    	
+	    	geometry = readLongs(dis);
+	    	routesLayer.drawRoute(geometry); // null safe
+			
+			is.close();
+			
+		} catch (Exception e) {
+			toast(e.getMessage());
+		}
 	}
-    
+
 }

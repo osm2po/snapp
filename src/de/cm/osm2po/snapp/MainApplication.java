@@ -24,16 +24,18 @@ public class MainApplication extends Application implements LocationListener, On
 
 	private LocationManager gps;
 	private TextToSpeech tts;
-
 	private SdGraph graph;
 	private SdGuide guide;
-	
 	private File mapFile; // Mapsforge
-	private Bundle bundle; // Tja, restoreInstanceState geht halt nicht immer, daher hier.
-	
 	private GpsListener gpsListener; // es gibt nur einen
-	
 	private boolean ttsQuiet;
+	
+	public final static File getSdDir() {
+        File sdcard = Environment.getExternalStorageDirectory();
+        File sdDir = new File(sdcard, "Snapp");
+        sdDir.mkdir();
+        return sdDir;
+	}
 
     @Override
     public void onCreate() {
@@ -46,9 +48,8 @@ public class MainApplication extends Application implements LocationListener, On
     	tts.setLanguage(Locale.GERMAN);
     	ttsQuiet = false;
     	
-        File sdcard = Environment.getExternalStorageDirectory();
-        graph = new SdGraph(new File(sdcard, "maps/snapp.gpt"));
-        mapFile = new File(sdcard, "maps/snapp.map");
+        graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
+        mapFile = new File(getSdDir(), "snapp.map");
     }
     
     public File getMapFile() {return mapFile;}
@@ -153,16 +154,6 @@ public class MainApplication extends Application implements LocationListener, On
 	
 	@Override
 	public void onInit(int status) {
-	}
-	
-	/****************************** InstanceState *************************/
-	
-	public void saveBundle(Bundle bundle) {
-		this.bundle = bundle;
-	}
-	
-	public Bundle restoreBundle() {
-		return this.bundle;
 	}
 
 }
