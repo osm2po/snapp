@@ -40,6 +40,7 @@ implements MarkerSelectListener, GpsListener {
 
 		app = (MainApplication) this.getApplication();
 		app.setGpsListener(this);
+		app.setTtsQuiet(false);
 		
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
@@ -80,6 +81,7 @@ implements MarkerSelectListener, GpsListener {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		if (item.getItemId() == R.id.menu_sleep) {
+	    	app.setTtsQuiet(true);
 			finish();
 		}
 		return true;

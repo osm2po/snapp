@@ -32,6 +32,8 @@ public class MainApplication extends Application implements LocationListener, On
 	private Bundle bundle; // Tja, restoreInstanceState geht halt nicht immer, daher hier.
 	
 	private GpsListener gpsListener; // es gibt nur einen
+	
+	private boolean ttsQuiet;
 
     @Override
     public void onCreate() {
@@ -42,6 +44,7 @@ public class MainApplication extends Application implements LocationListener, On
 
     	tts = new TextToSpeech(this, this);
     	tts.setLanguage(Locale.GERMAN);
+    	ttsQuiet = false;
     	
         File sdcard = Environment.getExternalStorageDirectory();
         graph = new SdGraph(new File(sdcard, "maps/snapp.gpt"));
@@ -60,6 +63,10 @@ public class MainApplication extends Application implements LocationListener, On
     public void setGpsListener(GpsListener gpsListener) {
     	this.gpsListener = gpsListener;
     };
+    
+    public void setTtsQuiet(boolean ttsQuiet) {
+    	this.ttsQuiet = ttsQuiet;
+    }
     
     /******************************** SD **********************************/
     
@@ -141,7 +148,7 @@ public class MainApplication extends Application implements LocationListener, On
 	/******************************** TTS *********************************/
 
 	public void speak(String msg) {
-		tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+		if (!ttsQuiet) tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
 	}
 	
 	@Override
