@@ -42,6 +42,7 @@ implements MarkerSelectListener, GpsListener {
 	private MapView mapView;
 
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
+	private static final int STATE_FILE_VERSION = 1;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -153,10 +154,13 @@ implements MarkerSelectListener, GpsListener {
 	
     /****************** SaveInstance secure via File ************************/
     
+	
 	private void saveInstanceState() {
 		try {
 			OutputStream os = new FileOutputStream(STATE_FILE);
 			DataOutputStream dos = new DataOutputStream(os);
+			dos.writeInt(STATE_FILE_VERSION);
+			dos.writeBoolean(tglBikeCar.isChecked());
 			dos.writeInt(mapView.getMapPosition().getZoomLevel());
 			GeoPoint center = mapView.getMapPosition().getMapCenter(); 
 			dos.writeDouble(center.getLatitude());
@@ -176,6 +180,14 @@ implements MarkerSelectListener, GpsListener {
 			
 			InputStream is = new FileInputStream(STATE_FILE);
 			DataInputStream dis = new DataInputStream(is);
+			
+			int saveInstanceVersion = dis.readInt();
+			if (saveInstanceVersion != STATE_FILE_VERSION) {
+				toast("Wrong SaveInstance-Version");
+				return;
+			}
+			
+			tglBikeCar.setChecked(dis.readBoolean());
 			
 			int zoomLevel = dis.readInt();
 			mapView.getController().setZoom(zoomLevel);
