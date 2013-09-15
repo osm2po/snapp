@@ -1,5 +1,7 @@
 package de.cm.osm2po.snapp;
 
-public interface GpsListener {
+
+public interface AppListener {
 	void onLocationChanged(double lat, double lon);
+	void onRouteChanged(long[] geometry);
 }

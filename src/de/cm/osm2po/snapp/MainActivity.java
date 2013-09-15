@@ -21,6 +21,7 @@ import org.mapsforge.android.maps.MapActivity;
 import org.mapsforge.android.maps.MapView;
 import org.mapsforge.core.GeoPoint;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,7 +32,7 @@ import android.widget.ToggleButton;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
-implements MarkerSelectListener, GpsListener {
+implements MarkerSelectListener, AppListener {
 	
 	private RoutesLayer routesLayer;
 	private MarkersLayer markersLayer;
@@ -40,7 +41,8 @@ implements MarkerSelectListener, GpsListener {
 	private ToggleButton tglBikeCar;
 	private MainApplication app;
 	private MapView mapView;
-
+	ProgressDialog progressDialog;
+	
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
 	private static final int STATE_FILE_VERSION = 1;
 	
@@ -51,8 +53,10 @@ implements MarkerSelectListener, GpsListener {
 		setContentView(R.layout.activity_main);
 
 		app = (MainApplication) this.getApplication();
-		app.setGpsListener(this);
 		app.setTtsQuiet(false);
+		if (app.isBusy()) progressDialog =  ProgressDialog.show(
+				this, null, "Please wait", true, false);
+
 		
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
@@ -75,12 +79,15 @@ implements MarkerSelectListener, GpsListener {
         tpTarget = null;
         
         restoreInstanceState();
+
+        app.setAppListener(this); // Zum Schluss
 	}
 
 	@Override
     protected void onDestroy() {
     	super.onDestroy();
-    	app.setGpsListener(null); // UnChain
+    	// FIXME handle running calculation
+    	app.setAppListener(null); // UnChain
     	saveInstanceState();
     }
 	
@@ -133,12 +140,20 @@ implements MarkerSelectListener, GpsListener {
 		
 		route();
 	}
-	
+
+	@Override
+	public void onRouteChanged(long[] geometry) {
+		this.geometry = geometry;
+		routesLayer.drawRoute(geometry);
+		if (progressDialog != null) progressDialog.dismiss();
+	}
+
 	private void route() {
 		if (tpSource != null && tpTarget != null) {
 			try {
-				geometry = app.route(tpSource, tpTarget, tglBikeCar.isChecked()); 
-				routesLayer.drawRoute(geometry);
+				progressDialog =  ProgressDialog.show(
+						this, "Calculating route...", "Please wait", true, false);
+				app.route(tpSource, tpTarget, tglBikeCar.isChecked());
 			} catch (Throwable t) {
 				toast("Routing error\n" + t.getMessage());
 			}
@@ -220,5 +235,6 @@ implements MarkerSelectListener, GpsListener {
 			toast(e.getMessage());
 		}
 	}
+
 
 }

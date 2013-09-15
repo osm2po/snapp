@@ -27,8 +27,9 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdGraph graph;
 	private SdGuide guide;
 	private File mapFile; // Mapsforge
-	private GpsListener gpsListener; // es gibt nur einen
+	private AppListener appListener; // es gibt nur einen
 	private boolean ttsQuiet;
+	private Thread routingThread;
 	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -61,8 +62,8 @@ public class MainApplication extends Application implements LocationListener, On
     	graph.close();
     }
     
-    public void setGpsListener(GpsListener gpsListener) {
-    	this.gpsListener = gpsListener;
+    public void setAppListener(AppListener appListener) {
+    	this.appListener = appListener;
     };
     
     public void setTtsQuiet(boolean ttsQuiet) {
@@ -71,8 +72,35 @@ public class MainApplication extends Application implements LocationListener, On
     
     /******************************** SD **********************************/
     
-    public long[] route(SdTouchPoint tpSource, SdTouchPoint tpTarget, boolean bikeMode) {
+    public boolean isBusy() {
+    	return routingThread != null && routingThread.isAlive();
+    }
+    
+    public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget,
+    		final boolean bikeMode) throws IllegalStateException {
+    	if (isBusy()) throw new IllegalStateException("Routing in progress");
+
     	speak("Route wird neu berechnet");
+    	routingThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
+					Thread.sleep(5000);
+					if (appListener != null) {
+						appListener.onRouteChanged(geometry);
+					}
+				} catch (Exception e) {
+					if (appListener != null) {
+						appListener.onRouteChanged(null);
+					}
+				}
+			}
+		});
+    	routingThread.start();
+    }
+    
+    private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget, boolean bikeMode) {
 		File cacheFile = new File(getCacheDir(), "osm2po" + System.currentTimeMillis() + ".sd");
 		SdRouter sdRouter = new SdRouter();
 		
@@ -111,8 +139,8 @@ public class MainApplication extends Application implements LocationListener, On
     /******************************** GPS *********************************/
 
     public void onGps(double lat, double lon) {
-		if (gpsListener != null) {
-			gpsListener.onLocationChanged(lat, lon);
+		if (appListener != null) {
+			appListener.onLocationChanged(lat, lon);
 			if (guide != null) {
 				SdAdvicePoint advicePoint = guide.locate(lat, lon, 30);
 				if (advicePoint != null) {

@@ -38,14 +38,14 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 	@Override
 	public void onClick(View v) {
 		if (v.getId() == R.id.btn_source) {
+			dismiss();
 			selectMarkerListener.onMarkerSelected(SOURCE_MARKER);
-			dismiss();
 		} else if (v.getId() == R.id.btn_target) {
+			dismiss();
 			selectMarkerListener.onMarkerSelected(TARGET_MARKER);
-			dismiss();
 		} else if (v.getId() == R.id.btn_gps_simu) {
-			selectMarkerListener.onMarkerSelected(GPS_MARKER);
 			dismiss();
+			selectMarkerListener.onMarkerSelected(GPS_MARKER);
 		}
 	}
 
