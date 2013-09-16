@@ -185,7 +185,7 @@ implements MarkerSelectListener, AppListener {
 			writeLongs(geometry, dos);
 
 		} catch (Exception e) {
-			toast(e.getMessage());
+			toast("Error: " + e.getMessage());
 		}
 	}
 	

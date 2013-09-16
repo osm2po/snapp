@@ -2,7 +2,6 @@ package de.cm.osm2po.snapp;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Locale;
 
 import android.app.Application;
 import android.content.Context;
@@ -15,6 +14,7 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import de.cm.osm2po.sd.guide.SdAdvicePoint;
 import de.cm.osm2po.sd.guide.SdGuide;
+import de.cm.osm2po.sd.guide.SdGuide.Locator;
 import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
@@ -27,9 +27,11 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdGraph graph;
 	private SdGuide guide;
 	private File mapFile; // Mapsforge
-	private AppListener appListener; // es gibt nur einen
+	private AppListener appListener; // there is only one
 	private boolean ttsQuiet;
 	private Thread routingThread;
+	
+	private int nextAdviceIdx; // Just for debugging - draft!
 	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -46,7 +48,7 @@ public class MainApplication extends Application implements LocationListener, On
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 5, this);
 
     	tts = new TextToSpeech(this, this);
-    	tts.setLanguage(Locale.GERMAN);
+//    	tts.setLanguage(Locale.GERMAN);
     	ttsQuiet = false;
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
@@ -81,6 +83,7 @@ public class MainApplication extends Application implements LocationListener, On
     	if (isBusy()) throw new IllegalStateException("Routing in progress");
 
     	speak("Route wird neu berechnet");
+    	nextAdviceIdx = 0;
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -121,7 +124,7 @@ public class MainApplication extends Application implements LocationListener, On
         
         long[] points = new long[1000];
         int nPoints = 0;
-        // TODO doppelte Punkte beim Aneinanderkleben vermeiden
+        // TODO eliminate redundant points at connections
         for (int e = 0; e < nEdges; e++) {
         	long[] coords = path.fetchGeometry(e);
             
@@ -142,11 +145,23 @@ public class MainApplication extends Application implements LocationListener, On
 		if (appListener != null) {
 			appListener.onLocationChanged(lat, lon);
 			if (guide != null) {
-				SdAdvicePoint advicePoint = guide.locate(lat, lon, 30);
-				if (advicePoint != null) {
-					String msg = advicePoint.getAdvice();
-					tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
-				}
+                Locator locator = this.guide.locate(lat, lon);
+                if (locator.getJitterMeters() < 50) {
+                    int meterStone = locator.getMeterStone();
+                    int tolerance = 25; // Meter
+                    SdAdvicePoint[] aps = guide.getAdvicePoints();
+                    int nAps = aps.length;
+                    for (int i = nextAdviceIdx; i < nAps; i++) {
+                    	SdAdvicePoint ap = guide.getAdvicePoints()[i];
+                        int apms = ap.getMeterStone();
+                        if (meterStone >= apms - tolerance && meterStone <= apms + tolerance) {
+        					String msg = ap.getAdvice();
+        					tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+        					nextAdviceIdx = i + 1;
+                            break;
+                        }
+                    }
+                }
 			}
 		}
     }
@@ -160,12 +175,12 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onProviderDisabled(String provider) {
-		speak("G P S ausgeschaltet");
+		speak("G P S on");
 	}
 
 	@Override
 	public void onProviderEnabled(String provider) {
-		speak("G P S eingeschaltet");
+		speak("G P S off");
 	}
 
 	@Override
