@@ -48,7 +48,7 @@ public class MainApplication extends Application implements LocationListener, On
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 5, this);
 
     	tts = new TextToSpeech(this, this);
-//    	tts.setLanguage(Locale.GERMAN);
+//    	tts.setLanguage(Locale.ENGLISH);
     	ttsQuiet = false;
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
@@ -82,7 +82,7 @@ public class MainApplication extends Application implements LocationListener, On
     		final boolean bikeMode) throws IllegalStateException {
     	if (isBusy()) throw new IllegalStateException("Routing in progress");
 
-    	speak("Route wird neu berechnet");
+    	speak("Routing");
     	nextAdviceIdx = 0;
     	routingThread = new Thread(new Runnable() {
 			@Override
