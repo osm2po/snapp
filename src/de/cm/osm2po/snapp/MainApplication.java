@@ -31,8 +31,6 @@ public class MainApplication extends Application implements LocationListener, On
 	private boolean ttsQuiet;
 	private Thread routingThread;
 	
-	private int nextAdviceIdx; // Just for debugging - draft!
-	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
         File sdDir = new File(sdcard, "Snapp");
@@ -48,7 +46,6 @@ public class MainApplication extends Application implements LocationListener, On
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 5, this);
 
     	tts = new TextToSpeech(this, this);
-//    	tts.setLanguage(Locale.ENGLISH);
     	ttsQuiet = false;
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
@@ -83,13 +80,12 @@ public class MainApplication extends Application implements LocationListener, On
     	if (isBusy()) throw new IllegalStateException("Routing in progress");
 
     	speak("Routing");
-    	nextAdviceIdx = 0;
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
-					Thread.sleep(5000);
+					Thread.sleep(1000);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
 					}
@@ -147,20 +143,9 @@ public class MainApplication extends Application implements LocationListener, On
 			if (guide != null) {
                 Locator locator = this.guide.locate(lat, lon);
                 if (locator.getJitterMeters() < 50) {
-                    int meterStone = locator.getMeterStone();
-                    int tolerance = 25; // Meter
-                    SdAdvicePoint[] aps = guide.getAdvicePoints();
-                    int nAps = aps.length;
-                    for (int i = nextAdviceIdx; i < nAps; i++) {
-                    	SdAdvicePoint ap = guide.getAdvicePoints()[i];
-                        int apms = ap.getMeterStone();
-                        if (meterStone >= apms - tolerance && meterStone <= apms + tolerance) {
-        					String msg = ap.getAdvice();
-        					tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
-        					nextAdviceIdx = i + 1;
-                            break;
-                        }
-                    }
+                	for (SdAdvicePoint ap : guide.lookAhead(locator.getMeterStone(), 15)) { 
+                		speak(ap.toString());
+                	}
                 }
 			}
 		}

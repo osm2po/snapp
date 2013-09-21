@@ -80,7 +80,7 @@ implements MarkerSelectListener, AppListener {
         
         restoreInstanceState();
 
-        app.setAppListener(this); // Zum Schluss
+        app.setAppListener(this);
 	}
 
 	@Override
@@ -145,6 +145,14 @@ implements MarkerSelectListener, AppListener {
 	public void onRouteChanged(long[] geometry) {
 		this.geometry = geometry;
 		routesLayer.drawRoute(geometry);
+		if (null == geometry) {
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					app.speak(toast("Route not found"));
+				}
+			});
+		}
 		if (progressDialog != null) progressDialog.dismiss();
 	}
 
@@ -155,15 +163,16 @@ implements MarkerSelectListener, AppListener {
 						this, "Calculating route...", "Please wait", true, false);
 				app.route(tpSource, tpTarget, tglBikeCar.isChecked());
 			} catch (Throwable t) {
-				toast("Routing error\n" + t.getMessage());
+				toast("Error\n" + t.getMessage());
 			}
 		} else {
 			toast("Please set Source and Target");
 		}
 	}
 	
-	private void toast(String msg) {
+	private String toast(String msg) {
 		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+		return msg;
 	}
 
 	
@@ -215,15 +224,23 @@ implements MarkerSelectListener, AppListener {
 	    	String tpSourceKey = readString(dis);
 	    	if (tpSourceKey != null) {
 	    		tpSource = SdTouchPoint.create(app.getGraph(), tpSourceKey);
-				GeoPoint geoPoint = new GeoPoint(tpSource.getLat(), tpSource.getLon());
-				markersLayer.moveMarker(SOURCE_MARKER, geoPoint);
+	    		if (null == tpSource) {
+	    			toast("Could not restore source");
+	    		} else {
+	    			GeoPoint geoPoint = new GeoPoint(tpSource.getLat(), tpSource.getLon());
+	    			markersLayer.moveMarker(SOURCE_MARKER, geoPoint);
+	    		}
 	    	}
 	    	
 	    	String tpTargetKey = readString(dis);
 	    	if (tpTargetKey != null) {
 	    		tpTarget = SdTouchPoint.create(app.getGraph(), tpTargetKey);
-				GeoPoint geoPoint = new GeoPoint(tpTarget.getLat(), tpTarget.getLon());
-				markersLayer.moveMarker(TARGET_MARKER, geoPoint);
+	    		if (null == tpTarget) {
+	    			toast("Could not restore target");
+	    		} else {
+					GeoPoint geoPoint = new GeoPoint(tpTarget.getLat(), tpTarget.getLon());
+					markersLayer.moveMarker(TARGET_MARKER, geoPoint);
+	    		}
 	    	}
 	    	
 	    	geometry = readLongs(dis);
@@ -232,7 +249,7 @@ implements MarkerSelectListener, AppListener {
 			is.close();
 			
 		} catch (Exception e) {
-			toast(e.getMessage());
+			toast("Error: " + e.getMessage());
 		}
 	}
 
