@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import de.cm.osm2po.sd.guide.SdAdvicePoint;
+import de.cm.osm2po.sd.guide.SdAdviceType;
 import de.cm.osm2po.sd.guide.SdGuide;
 import de.cm.osm2po.sd.guide.SdGuide.Locator;
 import de.cm.osm2po.sd.routing.SdGraph;
@@ -43,7 +44,7 @@ public class MainApplication extends Application implements LocationListener, On
     	super.onCreate();
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 5, this);
+    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 0, this);
 
     	tts = new TextToSpeech(this, this);
     	ttsQuiet = false;
@@ -143,9 +144,20 @@ public class MainApplication extends Application implements LocationListener, On
 			if (guide != null) {
                 Locator locator = this.guide.locate(lat, lon);
                 if (locator.getJitterMeters() < 50) {
-                	for (SdAdvicePoint ap : guide.lookAhead(locator.getMeterStone(), 15)) { 
-                		speak(ap.toString());
-                	}
+                    // alarm range
+                    int ms = locator.getMeterStone();
+                    int ms1 = ms - 20; // z.B. 20 kmh
+                    int ms2 = ms + 10;
+
+                    SdAdvicePoint[] aps = guide.lookAhead(ms1, ms2);
+                    for (int i = 0; i < aps.length; i++) {
+                        if (i > 0) {
+                            if (aps[i].getForecast() - aps[i-1].getForecast() < 50) {
+                                speak(SdAdviceType.getConcatMessage());
+                            }
+                        }
+                        speak(aps[i].toString());
+                    }
                 }
 			}
 		}
@@ -160,12 +172,12 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onProviderDisabled(String provider) {
-		speak("G P S on");
+		speak("G P S is off");
 	}
 
 	@Override
 	public void onProviderEnabled(String provider) {
-		speak("G P S off");
+		speak("G P S is on");
 	}
 
 	@Override
