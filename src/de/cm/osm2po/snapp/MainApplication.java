@@ -105,8 +105,8 @@ public class MainApplication extends Application implements LocationListener, On
 		SdRouter sdRouter = new SdRouter();
 		
 		guide = null;
-		SdPath path = sdRouter.findPath(graph,
-				cacheFile, tpSource, tpTarget, bikeMode, 1000, 1.1);
+		SdPath path = sdRouter.findPath(graph, cacheFile, tpSource, tpTarget,
+				bikeMode ? 500d : 15d, 1d, !bikeMode, !bikeMode);
 		
 		if (path != null) {
 			guide = new SdGuide(path);
