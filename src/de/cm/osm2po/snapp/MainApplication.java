@@ -44,7 +44,7 @@ public class MainApplication extends Application implements LocationListener, On
     	super.onCreate();
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 0, this);
+    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, this);
 
     	tts = new TextToSpeech(this, this);
     	ttsQuiet = false;
@@ -86,7 +86,6 @@ public class MainApplication extends Application implements LocationListener, On
 			public void run() {
 				try {
 					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
-					Thread.sleep(1000);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
 					}
@@ -138,28 +137,39 @@ public class MainApplication extends Application implements LocationListener, On
     
     /******************************** GPS *********************************/
 
+    private boolean gpsActionBusy;
     public void onGps(double lat, double lon) {
-		if (appListener != null) {
-			appListener.onLocationChanged(lat, lon);
-			if (guide != null) {
-                Locator locator = this.guide.locate(lat, lon);
-                if (locator.getJitterMeters() < 50) {
-                    // alarm range
-                    int ms = locator.getMeterStone();
-                    int ms1 = ms - 20; // z.B. 20 kmh
-                    int ms2 = ms + 10;
-
-                    SdAdvicePoint[] aps = guide.lookAhead(ms1, ms2);
-                    for (int i = 0; i < aps.length; i++) {
-                        if (i > 0) {
-                            if (aps[i].getForecast() - aps[i-1].getForecast() < 50) {
-                                speak(SdAdviceType.getConcatMessage());
-                            }
-                        }
-                        speak(aps[i].toString());
-                    }
-                }
+    	if (gpsActionBusy) return;
+    	gpsActionBusy = true;
+    	
+    	try {
+			if (appListener != null) {
+				appListener.onLocationChanged(lat, lon);
+				if (guide != null) {
+	                Locator locator = this.guide.locate(lat, lon);
+	                if (locator.getJitterMeters() < 50) {
+	                    // alarm range
+	                    int ms = locator.getMeterStone();
+	                    int ms1 = ms - 20; // z.B. 20 kmh
+	                    int ms2 = ms + 10;
+	
+	                    SdAdvicePoint[] aps = guide.lookAhead(ms1, ms2);
+	                    for (int i = 0; i < aps.length; i++) {
+	                        if (i > 0) {
+	                            if (aps[i].getForecast() - aps[i-1].getForecast() < 50) {
+	                                speak(SdAdviceType.getConcatMessage());
+	                            }
+	                        }
+	                        speak(aps[i].toString());
+	                    }
+	                }
+				}
 			}
+
+    	} catch (Throwable t) {
+    		speak("Error " + t.getMessage());
+		} finally {
+			gpsActionBusy = false;
 		}
     }
     
@@ -172,17 +182,14 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onProviderDisabled(String provider) {
-		speak("G P S is off");
 	}
 
 	@Override
 	public void onProviderEnabled(String provider) {
-		speak("G P S is on");
 	}
 
 	@Override
 	public void onStatusChanged(String provider, int status, Bundle extras) {
-		speak("G P S Status " + status);
 	}
 
     
