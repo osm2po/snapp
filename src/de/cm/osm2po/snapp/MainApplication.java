@@ -44,7 +44,7 @@ public class MainApplication extends Application implements LocationListener, On
     	super.onCreate();
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, this);
+    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
 
     	tts = new TextToSpeech(this, this);
     	ttsQuiet = false;
@@ -156,7 +156,7 @@ public class MainApplication extends Application implements LocationListener, On
 	                    SdAdvicePoint[] aps = guide.lookAhead(ms1, ms2);
 	                    for (int i = 0; i < aps.length; i++) {
 	                        if (i > 0) {
-	                            if (aps[i].getForecast() - aps[i-1].getForecast() < 50) {
+	                            if (aps[i].getForecastMarker() - aps[i-1].getForecastMarker() < 50) {
 	                                speak(SdAdviceType.getConcatMessage());
 	                            }
 	                        }
