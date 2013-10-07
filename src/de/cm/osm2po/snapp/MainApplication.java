@@ -31,6 +31,8 @@ public class MainApplication extends Application implements LocationListener, On
 	private AppListener appListener; // there is only one
 	private boolean ttsQuiet;
 	private Thread routingThread;
+	private SdRouter sdRouter;
+	private boolean bikeMode;
 	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -100,12 +102,13 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget, boolean bikeMode) {
-		File cacheFile = new File(getCacheDir(), "osm2po" + System.currentTimeMillis() + ".sd");
-		SdRouter sdRouter = new SdRouter();
-		
+		File cacheFile = new File(getCacheDir(), "osm2po.sd");
+		if (null == sdRouter || bikeMode != this.bikeMode) {
+			this.bikeMode = bikeMode;
+			sdRouter = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
+		}
 		guide = null;
-		SdPath path = sdRouter.findPath(graph, cacheFile, tpSource, tpTarget,
-				bikeMode ? 500d : 15d, 1d, !bikeMode, !bikeMode);
+		SdPath path = sdRouter.findPath(tpSource, tpTarget);
 		
 		if (path != null) {
 			guide = new SdGuide(path);
