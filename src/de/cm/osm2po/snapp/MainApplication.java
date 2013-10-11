@@ -33,6 +33,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private Thread routingThread;
 	private SdRouter sdRouter;
 	private boolean bikeMode;
+	private boolean routeTouched;
 	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -74,19 +75,20 @@ public class MainApplication extends Application implements LocationListener, On
     
     /******************************** SD **********************************/
     
-    public boolean isBusy() {
+    public boolean isCalculatinRoute() {
     	return routingThread != null && routingThread.isAlive();
     }
     
     public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget,
     		final boolean bikeMode) throws IllegalStateException {
-    	if (isBusy()) throw new IllegalStateException("Routing in progress");
+    	if (isCalculatinRoute()) throw new IllegalStateException("Routing in progress");
 
     	speak("Routing");
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
+					routeTouched = false;
 					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
@@ -142,7 +144,7 @@ public class MainApplication extends Application implements LocationListener, On
 
     private boolean gpsActionBusy;
     public void onGps(double lat, double lon) {
-    	if (gpsActionBusy) return;
+    	if (gpsActionBusy || isCalculatinRoute()) return;
     	gpsActionBusy = true;
     	
     	try {
@@ -150,21 +152,25 @@ public class MainApplication extends Application implements LocationListener, On
 				appListener.onLocationChanged(lat, lon);
 				if (guide != null) {
 	                Locator locator = this.guide.locate(lat, lon);
-	                if (locator.getJitterMeters() < 50) {
+	                if (locator.getJitterMeters() < 100) {
 	                    // alarm range
 	                    int ms = locator.getMeterStone();
-	                    int ms1 = ms - 20; // z.B. 20 kmh
-	                    int ms2 = ms + 10;
+	                    int ms1 = ms - 30; // z.B. 30 kmh
+	                    int ms2 = ms + 15;
 	
 	                    SdAdvicePoint[] aps = guide.lookAhead(ms1, ms2);
 	                    for (int i = 0; i < aps.length; i++) {
 	                        if (i > 0) {
-	                            if (aps[i].getForecastMarker() - aps[i-1].getForecastMarker() < 50) {
+	                        	routeTouched = true;
+	                            if (aps[i].getForecastMarker() - aps[i-1].getForecastMarker() < 50 && aps[i].getAdviceType() == SdAdviceType.TURN) {
 	                                speak(SdAdviceType.getConcatMessage());
 	                            }
 	                        }
 	                        speak(aps[i].toString());
 	                    }
+	                    
+	                } else if (routeTouched) {
+	                	this.appListener.onRouteLost(lat, lon);
 	                }
 				}
 			}

@@ -3,6 +3,7 @@ package de.cm.osm2po.snapp;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;
 import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.SOURCE_NEW_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
 import static de.cm.osm2po.snapp.Utils.readLongs;
 import static de.cm.osm2po.snapp.Utils.readString;
@@ -41,6 +42,7 @@ implements MarkerSelectListener, AppListener {
 	private ToggleButton tglBikeCar;
 	private MainApplication app;
 	private MapView mapView;
+	private long nGpsCalls;
 	ProgressDialog progressDialog;
 	
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
@@ -54,7 +56,7 @@ implements MarkerSelectListener, AppListener {
 
 		app = (MainApplication) this.getApplication();
 		app.setTtsQuiet(false);
-		if (app.isBusy()) progressDialog =  ProgressDialog.show(
+		if (app.isCalculatinRoute()) progressDialog =  ProgressDialog.show(
 				this, null, "Please wait", true, false);
 
 		
@@ -110,6 +112,7 @@ implements MarkerSelectListener, AppListener {
 	public void onLocationChanged(double lat, double lon) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		markersLayer.moveMarker(GPS_MARKER, geoPoint);
+		if (nGpsCalls++ % 25 == 0) mapView.setCenter(geoPoint);
 	}
 
 	@Override
@@ -157,7 +160,7 @@ implements MarkerSelectListener, AppListener {
 	}
 
 	private void route() {
-		if (tpSource != null && tpTarget != null) {
+		if (tpSource != null && tpTarget != null && !app.isCalculatinRoute()) {
 			try {
 				progressDialog =  ProgressDialog.show(
 						this, "Calculating route...", "Please wait", true, false);
@@ -169,6 +172,17 @@ implements MarkerSelectListener, AppListener {
 			toast("Please set Source and Target");
 		}
 	}
+
+	@Override
+	public void onRouteLost(double lat, double lon) {
+		app.speak("Route lost");
+		tpSource = SdTouchPoint.create(app.getGraph(), (float)lat, (float)lon);
+		if (tpSource != null) {
+			markersLayer.moveMarker(SOURCE_NEW_MARKER, new GeoPoint(lat, lon));
+		}
+		route();
+	}
+
 	
 	private String toast(String msg) {
 		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
