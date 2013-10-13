@@ -1,5 +1,8 @@
 package de.cm.osm2po.snapp;
 
+import static de.cm.osm2po.sd.guide.SdAdviceType.INF_ROUTE_CALC;
+import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
+
 import java.io.File;
 import java.util.Arrays;
 
@@ -12,8 +15,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
-import de.cm.osm2po.sd.guide.SdAdvicePoint;
-import de.cm.osm2po.sd.guide.SdAdviceType;
+import de.cm.osm2po.sd.guide.SdAdvice;
 import de.cm.osm2po.sd.guide.SdGuide;
 import de.cm.osm2po.sd.guide.SdGuide.Locator;
 import de.cm.osm2po.sd.routing.SdGraph;
@@ -33,7 +35,8 @@ public class MainApplication extends Application implements LocationListener, On
 	private Thread routingThread;
 	private SdRouter sdRouter;
 	private boolean bikeMode;
-	private int jitterCounter;
+	private long[] jitters; // Coords, nano-long coded
+	private int nJitters;
 	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -54,6 +57,8 @@ public class MainApplication extends Application implements LocationListener, On
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
         mapFile = new File(getSdDir(), "snapp.map");
+        
+        jitters = new long[10];
     }
     
     public File getMapFile() {return mapFile;}
@@ -80,16 +85,16 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget,
-    		final boolean bikeMode) throws IllegalStateException {
+    		final boolean bikeMode, final long dirHint) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-		speak(SdAdviceType.getRouteCalcMessage());
+		speak(INF_ROUTE_CALC.getMessage());
 
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
+					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode, dirHint);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
 					}
@@ -103,14 +108,15 @@ public class MainApplication extends Application implements LocationListener, On
     	routingThread.start();
     }
     
-    private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget, boolean bikeMode) {
+    private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget,
+    		boolean bikeMode, long dirHint) {
 		File cacheFile = new File(getCacheDir(), "osm2po.sd");
 		if (null == sdRouter || bikeMode != this.bikeMode) {
 			this.bikeMode = bikeMode;
 			sdRouter = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
 		}
 		guide = null;
-		SdPath path = sdRouter.findPath(tpSource, tpTarget);
+		SdPath path = sdRouter.findPath(tpSource, tpTarget, dirHint);
 		
 		if (path != null) {
 			guide = new SdGuide(path);
@@ -153,16 +159,18 @@ public class MainApplication extends Application implements LocationListener, On
 				if (guide != null) {
 	                Locator locator = this.guide.locate(lat, lon);
 	                if (locator.getJitterMeters() < 50) {
-	                	jitterCounter = 0;
+	                	nJitters = 0;
 	                    // alarm range
 	                    int ms = locator.getMeterStone();
 	                    int kmh = bikeMode ? 20 : 50; // NYI
-	                    SdAdvicePoint[] aps = guide.lookAhead(ms, 15, kmh);
+	                    SdAdvice[] aps = guide.lookAhead(ms, 10, kmh);
 	                    for (int i = 0; i < aps.length; i++) speak(aps[i].toString());
 	                } else {
-	                	if (++jitterCounter >= 10) {
-	                		jitterCounter = 0;
-	                		this.appListener.onRouteLost(lat, lon);
+	                	if (nJitters == jitters.length) {
+	                		nJitters = 0;
+	                		this.appListener.onRouteLost(jitters);
+	                	} else {
+	                		jitters[nJitters++] = toCoord(lat, lon);
 	                	}
 	                }
 				}

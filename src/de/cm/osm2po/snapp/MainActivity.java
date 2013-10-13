@@ -1,5 +1,11 @@
 package de.cm.osm2po.snapp;
 
+import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_POINT_FIND;
+import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_POINT_SET;
+import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_ROUTE_CALC;
+import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_ROUTE_LOST;
+import static de.cm.osm2po.sd.routing.SdGeoUtils.toLat;
+import static de.cm.osm2po.sd.routing.SdGeoUtils.toLon;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;
 import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
@@ -31,7 +37,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import de.cm.osm2po.sd.guide.SdAdviceType;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -64,7 +69,7 @@ implements MarkerSelectListener, AppListener {
 		
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {route();}
+			public void onClick(View v) {route(0);}
 		});
 		
 		mapView = (MapView) findViewById(R.id.mapView);
@@ -141,10 +146,10 @@ implements MarkerSelectListener, AppListener {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
 			markersLayer.moveMarker(markerType, geoPoint);
 		} else {
-			toast("Point not found");
+			app.speak(toast(ERR_POINT_FIND.getMessage()));
 		}
 		
-		route();
+		route(0);
 	}
 
 	@Override
@@ -155,37 +160,39 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					toast("Route not found");
+					app.speak(toast(ERR_ROUTE_CALC.getMessage()));
 				}
 			});
 		}
 		if (progressDialog != null) progressDialog.dismiss();
 	}
 
-	private void route() {
+	private void route(long dirHint) {
 		if (app.isCalculatingRoute()) return;
 		if (tpSource != null && tpTarget != null) {
 			try {
 				progressDialog =  ProgressDialog.show(
 						this, "Calculating route...", "Please wait", true, false);
-				app.route(tpSource, tpTarget, tglBikeCar.isChecked());
+				app.route(tpSource, tpTarget, tglBikeCar.isChecked(), dirHint);
 			} catch (Throwable t) {
 				toast("Error\n" + t.getMessage());
 			}
 		} else {
-			toast("Please set Source and Target");
+			app.speak(toast(ERR_POINT_SET.getMessage()));
 		}
 	}
 
 	@Override
-	public void onRouteLost(double lat, double lon) {
-		app.speak(SdAdviceType.getRouteLostMessage());
-		tpSource = SdTouchPoint.create(app.getGraph(), (float)lat, (float)lon);
+	public void onRouteLost(long[] jitterCoords) {
+		app.speak(ERR_ROUTE_LOST.getMessage());
+		int n = jitterCoords.length;
+		long c =  jitterCoords[n-2]; // last but one jitter is new Source-TouchPoint
+		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
 		if (tpSource != null) {
-			markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(lat, lon));
+			markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(toLat(c), toLon(c)));
 			markersLayer.moveMarker(SOURCE_NEW_MARKER, new GeoPoint(tpSource.getLat(), tpSource.getLon()));
 		}
-		route();
+		route(jitterCoords[n-1]); // last jitter as direction hint);
 	}
 
 	
