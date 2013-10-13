@@ -33,7 +33,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private Thread routingThread;
 	private SdRouter sdRouter;
 	private boolean bikeMode;
-	private boolean routeTouched;
+	private int jitterCounter;
 	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -75,20 +75,20 @@ public class MainApplication extends Application implements LocationListener, On
     
     /******************************** SD **********************************/
     
-    public boolean isCalculatinRoute() {
+    public boolean isCalculatingRoute() {
     	return routingThread != null && routingThread.isAlive();
     }
     
     public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget,
     		final boolean bikeMode) throws IllegalStateException {
-    	if (isCalculatinRoute()) throw new IllegalStateException("Routing in progress");
+    	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-    	speak("Routing");
+		speak(SdAdviceType.getRouteCalcMessage());
+
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					routeTouched = false;
 					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
@@ -142,35 +142,28 @@ public class MainApplication extends Application implements LocationListener, On
     
     /******************************** GPS *********************************/
 
-    private boolean gpsActionBusy;
+    private boolean isOnGpsBusy;
     public void onGps(double lat, double lon) {
-    	if (gpsActionBusy || isCalculatinRoute()) return;
-    	gpsActionBusy = true;
+    	if (isOnGpsBusy || isCalculatingRoute()) return;
+    	isOnGpsBusy = true;
     	
     	try {
 			if (appListener != null) {
 				appListener.onLocationChanged(lat, lon);
 				if (guide != null) {
 	                Locator locator = this.guide.locate(lat, lon);
-	                if (locator.getJitterMeters() < 100) {
+	                if (locator.getJitterMeters() < 50) {
+	                	jitterCounter = 0;
 	                    // alarm range
 	                    int ms = locator.getMeterStone();
-	                    int ms1 = ms - 30; // z.B. 30 kmh
-	                    int ms2 = ms + 15;
-	
-	                    SdAdvicePoint[] aps = guide.lookAhead(ms1, ms2);
-	                    for (int i = 0; i < aps.length; i++) {
-	                        if (i > 0) {
-	                        	routeTouched = true;
-	                            if (aps[i].getForecastMarker() - aps[i-1].getForecastMarker() < 50 && aps[i].getAdviceType() == SdAdviceType.TURN) {
-	                                speak(SdAdviceType.getConcatMessage());
-	                            }
-	                        }
-	                        speak(aps[i].toString());
-	                    }
-	                    
-	                } else if (routeTouched) {
-	                	this.appListener.onRouteLost(lat, lon);
+	                    int kmh = bikeMode ? 20 : 50; // NYI
+	                    SdAdvicePoint[] aps = guide.lookAhead(ms, 15, kmh);
+	                    for (int i = 0; i < aps.length; i++) speak(aps[i].toString());
+	                } else {
+	                	if (++jitterCounter >= 10) {
+	                		jitterCounter = 0;
+	                		this.appListener.onRouteLost(lat, lon);
+	                	}
 	                }
 				}
 			}
@@ -178,7 +171,7 @@ public class MainApplication extends Application implements LocationListener, On
     	} catch (Throwable t) {
     		speak("Error " + t.getMessage());
 		} finally {
-			gpsActionBusy = false;
+			isOnGpsBusy = false;
 		}
     }
     

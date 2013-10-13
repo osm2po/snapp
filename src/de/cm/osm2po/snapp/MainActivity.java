@@ -5,6 +5,7 @@ import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_NEW_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.TOUCH_MARKER;
 import static de.cm.osm2po.snapp.Utils.readLongs;
 import static de.cm.osm2po.snapp.Utils.readString;
 import static de.cm.osm2po.snapp.Utils.writeLongs;
@@ -30,6 +31,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import de.cm.osm2po.sd.guide.SdAdviceType;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -56,7 +58,7 @@ implements MarkerSelectListener, AppListener {
 
 		app = (MainApplication) this.getApplication();
 		app.setTtsQuiet(false);
-		if (app.isCalculatinRoute()) progressDialog =  ProgressDialog.show(
+		if (app.isCalculatingRoute()) progressDialog =  ProgressDialog.show(
 				this, null, "Please wait", true, false);
 
 		
@@ -112,7 +114,8 @@ implements MarkerSelectListener, AppListener {
 	public void onLocationChanged(double lat, double lon) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		markersLayer.moveMarker(GPS_MARKER, geoPoint);
-		if (nGpsCalls++ % 25 == 0) mapView.setCenter(geoPoint);
+		if (nGpsCalls == 0) mapView.setCenter(geoPoint);
+		if (++nGpsCalls > 10) nGpsCalls = 0;
 	}
 
 	@Override
@@ -152,7 +155,7 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					app.speak(toast("Route not found"));
+					toast("Route not found");
 				}
 			});
 		}
@@ -160,7 +163,8 @@ implements MarkerSelectListener, AppListener {
 	}
 
 	private void route() {
-		if (tpSource != null && tpTarget != null && !app.isCalculatinRoute()) {
+		if (app.isCalculatingRoute()) return;
+		if (tpSource != null && tpTarget != null) {
 			try {
 				progressDialog =  ProgressDialog.show(
 						this, "Calculating route...", "Please wait", true, false);
@@ -175,10 +179,11 @@ implements MarkerSelectListener, AppListener {
 
 	@Override
 	public void onRouteLost(double lat, double lon) {
-		app.speak("Route lost");
+		app.speak(SdAdviceType.getRouteLostMessage());
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)lat, (float)lon);
 		if (tpSource != null) {
-			markersLayer.moveMarker(SOURCE_NEW_MARKER, new GeoPoint(lat, lon));
+			markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(lat, lon));
+			markersLayer.moveMarker(SOURCE_NEW_MARKER, new GeoPoint(tpSource.getLat(), tpSource.getLon()));
 		}
 		route();
 	}
