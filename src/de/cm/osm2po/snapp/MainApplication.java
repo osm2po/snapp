@@ -115,14 +115,14 @@ public class MainApplication extends Application implements LocationListener, On
 			this.bikeMode = bikeMode;
 			sdRouter = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
 		}
-		guide = null;
+
 		SdPath path = sdRouter.findPath(tpSource, tpTarget, dirHint);
-		
-		if (path != null) {
-			guide = new SdGuide(path);
-			return createGeometry(path);
-		}
-		return null;
+		guide = path != null ? new SdGuide(path) : null;
+		return createGeometry(path);
+    }
+    
+    public boolean isGuiding() {
+    	return guide != null;
     }
     
     private long[] createGeometry(SdPath path) {

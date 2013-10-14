@@ -1,6 +1,7 @@
 package de.cm.osm2po.snapp;
 
 import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.HOME_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
 import android.app.DialogFragment;
@@ -31,6 +32,8 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 		btnTarget.setOnClickListener(this);
 		ImageButton btnGpsSimu = (ImageButton) view.findViewById(R.id.btn_gps_simu);
 		btnGpsSimu.setOnClickListener(this);
+		ImageButton btnHome = (ImageButton) view.findViewById(R.id.btn_home);
+		btnHome.setOnClickListener(this);
 		
         return view;
 	}
@@ -46,6 +49,9 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 		} else if (v.getId() == R.id.btn_gps_simu) {
 			dismiss();
 			selectMarkerListener.onMarkerSelected(GPS_MARKER);
+		} else if (v.getId() == R.id.btn_home) {
+			dismiss();
+			selectMarkerListener.onMarkerSelected(HOME_MARKER);
 		}
 	}
 

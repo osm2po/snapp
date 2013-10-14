@@ -8,8 +8,8 @@ import static de.cm.osm2po.sd.routing.SdGeoUtils.toLat;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toLon;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;
 import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
+import static de.cm.osm2po.snapp.MarkerType.HOME_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
-import static de.cm.osm2po.snapp.MarkerType.SOURCE_NEW_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TOUCH_MARKER;
 import static de.cm.osm2po.snapp.Utils.readLongs;
@@ -53,7 +53,7 @@ implements MarkerSelectListener, AppListener {
 	ProgressDialog progressDialog;
 	
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
-	private static final int STATE_FILE_VERSION = 1;
+	private static final int STATE_FILE_VERSION = 2;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +90,8 @@ implements MarkerSelectListener, AppListener {
         restoreInstanceState();
 
         app.setAppListener(this);
+        
+        if (!app.isGuiding()) route(0);
 	}
 
 	@Override
@@ -130,7 +132,13 @@ implements MarkerSelectListener, AppListener {
 		double lon = geoPoint.getLongitude();
 		
 		if (GPS_MARKER == markerType) {
+			
 			app.onGps(lat, lon); // Simulation
+			return;
+		}
+		
+		if (HOME_MARKER == markerType) {
+			markersLayer.moveMarker(markerType, geoPoint);
 			return;
 		}
 		
@@ -190,7 +198,7 @@ implements MarkerSelectListener, AppListener {
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
 		if (tpSource != null) {
 			markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(toLat(c), toLon(c)));
-			markersLayer.moveMarker(SOURCE_NEW_MARKER, new GeoPoint(tpSource.getLat(), tpSource.getLon()));
+			markersLayer.moveMarker(SOURCE_MARKER, new GeoPoint(tpSource.getLat(), tpSource.getLon()));
 		}
 		route(jitterCoords[n-1]); // last jitter as direction hint);
 	}
@@ -211,13 +219,24 @@ implements MarkerSelectListener, AppListener {
 			DataOutputStream dos = new DataOutputStream(os);
 			dos.writeInt(STATE_FILE_VERSION);
 			dos.writeBoolean(tglBikeCar.isChecked());
+			
 			dos.writeInt(mapView.getMapPosition().getZoomLevel());
 			GeoPoint center = mapView.getMapPosition().getMapCenter(); 
 			dos.writeDouble(center.getLatitude());
 			dos.writeDouble(center.getLongitude());
+
+			GeoPoint geoPointHome = markersLayer.getMarkerPosition(HOME_MARKER);
+			boolean hasHome = null != geoPointHome;
+			dos.writeBoolean(hasHome);
+			if (hasHome) {
+				dos.writeDouble(geoPointHome.getLatitude());
+				dos.writeDouble(geoPointHome.getLongitude());
+			}
+			
 			writeString(tpSource == null ? null : tpSource.getKey(), dos);
 			writeString(tpTarget == null ? null : tpTarget.getKey(), dos);
 			writeLongs(geometry, dos);
+			
 
 		} catch (Exception e) {
 			toast("Error: " + e.getMessage());
@@ -246,6 +265,14 @@ implements MarkerSelectListener, AppListener {
 			double centerLon = dis.readDouble();
 			GeoPoint center = new GeoPoint(centerLat, centerLon);
 			mapView.setCenter(center);
+
+			boolean hasHome = dis.readBoolean();
+			if (hasHome) {
+				double homeLat = dis.readDouble();
+				double homeLon = dis.readDouble();
+				GeoPoint geoPointHome = new GeoPoint(homeLat, homeLon);
+    			markersLayer.moveMarker(HOME_MARKER, geoPointHome);
+			}
 			
 	    	String tpSourceKey = readString(dis);
 	    	if (tpSourceKey != null) {
@@ -270,7 +297,9 @@ implements MarkerSelectListener, AppListener {
 	    	}
 	    	
 	    	geometry = readLongs(dis);
-	    	routesLayer.drawRoute(geometry); // null safe
+	    	
+	    	if (app.isGuiding()) 
+	    		routesLayer.drawRoute(geometry); // null safe
 			
 			is.close();
 			

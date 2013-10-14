@@ -32,8 +32,7 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
     		} else {
     			ArrayItemizedOverlay.boundCenter(drawable);
     		}
-    		markers[i] = new OverlayItem(null,
-    				mte.getTitle(), mte.getSnippet(), drawable);
+    		markers[i] = new OverlayItem(null, mte.getTitle(), null, drawable);
     		addItem(markers[i]);
     	}
 	}
@@ -41,6 +40,10 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	public void moveMarker(MarkerType mte, GeoPoint geoPoint) {
 		markers[mte.getIndex()].setPoint(geoPoint);
 		requestRedraw();
+	}
+	
+	public GeoPoint getMarkerPosition(MarkerType mte) {
+		return markers[mte.getIndex()].getPoint();
 	}
 
 	public GeoPoint getLastTouchPosition() {
