@@ -1,10 +1,15 @@
 package de.cm.osm2po.snapp;
 
+import static android.speech.tts.TextToSpeech.QUEUE_ADD;
+import static android.speech.tts.TextToSpeech.QUEUE_FLUSH;
 import static de.cm.osm2po.sd.guide.SdAdviceType.INF_ROUTE_CALC;
+import static de.cm.osm2po.sd.guide.SdAdviceType.TURN;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 
 import java.io.File;
 import java.util.Arrays;
+
+import org.mapsforge.core.GeoPoint;
 
 import android.app.Application;
 import android.content.Context;
@@ -38,13 +43,16 @@ public class MainApplication extends Application implements LocationListener, On
 	private long[] jitters; // Coords, nano-long coded
 	private int nJitters;
 	
+	private double lastLat;
+	private double lastLon;
+	
 	public final static File getSdDir() {
         File sdcard = Environment.getExternalStorageDirectory();
         File sdDir = new File(sdcard, "Snapp");
         sdDir.mkdir();
         return sdDir;
 	}
-
+	
     @Override
     public void onCreate() {
     	super.onCreate();
@@ -88,7 +96,7 @@ public class MainApplication extends Application implements LocationListener, On
     		final boolean bikeMode, final long dirHint) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-		speak(INF_ROUTE_CALC.getMessage());
+		speak(INF_ROUTE_CALC.getMessage(), false);
 
     	routingThread = new Thread(new Runnable() {
 			@Override
@@ -147,9 +155,16 @@ public class MainApplication extends Application implements LocationListener, On
 
     
     /******************************** GPS *********************************/
+    
+    public GeoPoint getLastPosition() {
+    	return new GeoPoint(lastLat, lastLon);
+    }
 
     private boolean isOnGpsBusy;
     public void onGps(double lat, double lon) {
+    	lastLat = lat;
+    	lastLon = lon;
+    	
     	if (isOnGpsBusy || isCalculatingRoute()) return;
     	isOnGpsBusy = true;
     	
@@ -158,13 +173,23 @@ public class MainApplication extends Application implements LocationListener, On
 				appListener.onLocationChanged(lat, lon);
 				if (guide != null) {
 	                Locator locator = this.guide.locate(lat, lon);
+	                appListener.onLocate(locator);
 	                if (locator.getJitterMeters() < 50) {
 	                	nJitters = 0;
 	                    // alarm range
 	                    int ms = locator.getMeterStone();
-	                    int kmh = bikeMode ? 20 : 50; // NYI
-	                    SdAdvice[] aps = guide.lookAhead(ms, 10, kmh);
-	                    for (int i = 0; i < aps.length; i++) speak(aps[i].toString());
+	                    int kmh = locator.getKmh();
+	                    SdAdvice[] aps = guide.lookAhead(ms, kmh);
+	                    if (aps.length > 0) {
+	                    	String msg = "";
+	                    	boolean isImportant = false;
+	                    	for (int i = 0; i < aps.length; i++) {
+	                    		msg += aps[i].toString() + " ";
+	                    		isImportant |= (TURN == aps[i].getAdviceType());
+	                    	}
+	                    	speak(msg, isImportant);
+	                    }
+	                    
 	                } else {
 	                	if (nJitters == jitters.length) {
 	                		nJitters = 0;
@@ -177,7 +202,7 @@ public class MainApplication extends Application implements LocationListener, On
 			}
 
     	} catch (Throwable t) {
-    		speak("Error " + t.getMessage());
+    		speak("Error " + t.getMessage(), true);
 		} finally {
 			isOnGpsBusy = false;
 		}
@@ -202,11 +227,11 @@ public class MainApplication extends Application implements LocationListener, On
 	public void onStatusChanged(String provider, int status, Bundle extras) {
 	}
 
-    
 	/******************************** TTS *********************************/
 
-	public void speak(String msg) {
-		if (!ttsQuiet) tts.speak(msg, TextToSpeech.QUEUE_ADD, null);
+	public void speak(String msg, boolean now) {
+		int queueMode = now ? QUEUE_FLUSH : QUEUE_ADD;
+		if (!ttsQuiet) tts.speak(msg, queueMode, null);
 	}
 	
 	@Override

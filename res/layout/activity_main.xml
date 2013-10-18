@@ -10,13 +10,30 @@
 	    android:layout_height="match_parent" 
 	    />
 
-    <ToggleButton
-        android:id="@+id/tglBikeCar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minHeight="24dp"
-        android:minWidth="32dp"
-        android:textOff="@string/tgl_mode_car"
-        android:textOn="@string/tgl_mode_bike" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <ToggleButton
+	        android:id="@+id/tglBikeCar"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:minHeight="24dp"
+	        android:minWidth="32dp"
+	        android:textOff="@string/tgl_mode_car"
+	        android:textOn="@string/tgl_mode_bike" />
+	
+	    <TextView
+	        android:id="@+id/lblSpeed"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:gravity="right"
+	        android:textColor="@color/lightred"
+	        android:textStyle="bold" />
+
+    </LinearLayout>
+
+    
+
 
 </FrameLayout>

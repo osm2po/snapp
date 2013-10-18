@@ -35,8 +35,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import de.cm.osm2po.sd.guide.SdGuide.Locator;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -47,6 +49,7 @@ implements MarkerSelectListener, AppListener {
 	private SdTouchPoint tpSource, tpTarget;
 	private long[] geometry;
 	private ToggleButton tglBikeCar;
+	private TextView lblSpeed;
 	private MainApplication app;
 	private MapView mapView;
 	private long nGpsCalls;
@@ -71,6 +74,8 @@ implements MarkerSelectListener, AppListener {
 		tglBikeCar.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {route(0);}
 		});
+		
+		lblSpeed = (TextView) findViewById(R.id.lblSpeed);
 		
 		mapView = (MapView) findViewById(R.id.mapView);
 		mapView.setClickable(true);
@@ -104,15 +109,28 @@ implements MarkerSelectListener, AppListener {
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.activity_main, menu);
+		getMenuInflater().inflate(R.menu.menu_main, menu);
 		return true;
 	}
 	
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
-		if (item.getItemId() == R.id.menu_sleep) {
+		if (item.getItemId() == R.id.menu_app_sleep) {
 	    	app.setTtsQuiet(true);
 			finish();
+		} else if (item.getItemId() == R.id.menu_nav_home) {
+
+			GeoPoint gp1 = app.getLastPosition();
+			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
+			if (gp1 != null && gp2 != null) {
+				tpSource = null;
+				tpTarget = null;
+				markersLayer.moveMarker(MarkerType.TOUCH_MARKER, gp1);
+				onMarkerSelected(SOURCE_MARKER);
+				markersLayer.moveMarker(MarkerType.TOUCH_MARKER, gp2);
+				onMarkerSelected(TARGET_MARKER);
+			}
+			
 		}
 		return true;
 	}
@@ -124,6 +142,11 @@ implements MarkerSelectListener, AppListener {
 		if (nGpsCalls == 0) mapView.setCenter(geoPoint);
 		if (++nGpsCalls > 10) nGpsCalls = 0;
 	}
+	
+	@Override
+	public void onLocate(Locator loc) {
+		lblSpeed.setText(loc.getKmh() + " km/h");
+	}
 
 	@Override
 	public void onMarkerSelected(MarkerType markerType) {
@@ -132,7 +155,6 @@ implements MarkerSelectListener, AppListener {
 		double lon = geoPoint.getLongitude();
 		
 		if (GPS_MARKER == markerType) {
-			
 			app.onGps(lat, lon); // Simulation
 			return;
 		}
@@ -154,7 +176,7 @@ implements MarkerSelectListener, AppListener {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
 			markersLayer.moveMarker(markerType, geoPoint);
 		} else {
-			app.speak(toast(ERR_POINT_FIND.getMessage()));
+			app.speak(toast(ERR_POINT_FIND.getMessage()), false);
 		}
 		
 		route(0);
@@ -168,7 +190,7 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					app.speak(toast(ERR_ROUTE_CALC.getMessage()));
+					app.speak(toast(ERR_ROUTE_CALC.getMessage()), false);
 				}
 			});
 		}
@@ -186,13 +208,13 @@ implements MarkerSelectListener, AppListener {
 				toast("Error\n" + t.getMessage());
 			}
 		} else {
-			app.speak(toast(ERR_POINT_SET.getMessage()));
+//			toast(ERR_POINT_SET.getMessage());
 		}
 	}
 
 	@Override
 	public void onRouteLost(long[] jitterCoords) {
-		app.speak(ERR_ROUTE_LOST.getMessage());
+		app.speak(ERR_ROUTE_LOST.getMessage(), false);
 		int n = jitterCoords.length;
 		long c =  jitterCoords[n-2]; // last but one jitter is new Source-TouchPoint
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
@@ -307,6 +329,5 @@ implements MarkerSelectListener, AppListener {
 			toast("Error: " + e.getMessage());
 		}
 	}
-
 
 }

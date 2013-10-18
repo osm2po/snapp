@@ -2,8 +2,9 @@
 <resources>
 
     <string name="app_name">Snapp</string>
-    <string name="menu_sleep">Sleep</string>
-
+    <string name="menu_app_sleep">Shut up</string>
+    <string name="menu_nav_home">Drive home</string>
+    
     <string name="btn_source">Source</string>
     <string name="btn_target">Target</string>
     <string name="btn_route">Route</string>
