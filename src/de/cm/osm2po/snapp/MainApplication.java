@@ -59,6 +59,11 @@ public class MainApplication extends Application implements LocationListener, On
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
+    	Location loc = gps.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    	if (loc != null) {
+	    	this.lastLat = loc.getLatitude();
+	    	this.lastLon = loc.getLongitude();
+    	}
 
     	tts = new TextToSpeech(this, this);
     	ttsQuiet = false;
