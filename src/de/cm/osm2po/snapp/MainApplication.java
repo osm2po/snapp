@@ -16,6 +16,7 @@ import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.speech.tts.TextToSpeech;
@@ -42,6 +43,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private boolean bikeMode;
 	private long[] jitters; // Coords, nano-long coded
 	private int nJitters;
+	private MediaPlayer mediaPlayer;
 	
 	private double lastLat;
 	private double lastLon;
@@ -67,6 +69,8 @@ public class MainApplication extends Application implements LocationListener, On
 
     	tts = new TextToSpeech(this, this);
     	ttsQuiet = false;
+    	
+    	mediaPlayer = MediaPlayer.create(this, R.raw.filler8);
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
         mapFile = new File(getSdDir(), "snapp.map");
@@ -130,7 +134,8 @@ public class MainApplication extends Application implements LocationListener, On
 		}
 
 		SdPath path = sdRouter.findPath(tpSource, tpTarget, dirHint);
-		guide = path != null ? new SdGuide(path) : null;
+		guide = null == path ? null : new SdGuide(path);
+		
 		return createGeometry(path);
     }
     
@@ -180,6 +185,10 @@ public class MainApplication extends Application implements LocationListener, On
 	                Locator locator = this.guide.locate(lat, lon);
 	                appListener.onLocate(locator);
 	                if (locator.getJitterMeters() < 50) {
+	                	if (mediaPlayer.isPlaying()) {
+	                		mediaPlayer.pause();
+	                	}
+	                	
 	                	nJitters = 0;
 	                    // alarm range
 	                    int ms = locator.getMeterStone();
@@ -193,6 +202,10 @@ public class MainApplication extends Application implements LocationListener, On
 	                    		isImportant |= (TURN == aps[i].getAdviceType());
 	                    	}
 	                    	speak(msg, isImportant);
+	                    } else {
+	                    	if (guide.getSilence() > 30 && !mediaPlayer.isPlaying()) {
+	                    		mediaPlayer.start();
+	                    	}
 	                    }
 	                    
 	                } else {
