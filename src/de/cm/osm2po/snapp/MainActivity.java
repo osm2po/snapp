@@ -64,7 +64,7 @@ implements MarkerSelectListener, AppListener {
 		setContentView(R.layout.activity_main);
 
 		app = (MainApplication) this.getApplication();
-		app.setTtsQuiet(false);
+		app.setQuiet(false);
 		if (app.isCalculatingRoute()) progressDialog =  ProgressDialog.show(
 				this, null, "Please wait", true, false);
 
@@ -115,8 +115,7 @@ implements MarkerSelectListener, AppListener {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		if (item.getItemId() == R.id.menu_app_sleep) {
-	    	app.setTtsQuiet(true);
-			finish();
+	    	app.setQuiet(true);
 		} else if (item.getItemId() == R.id.menu_nav_home) {
 
 			GeoPoint gp1 = app.getLastPosition();

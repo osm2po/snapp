@@ -37,7 +37,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdGuide guide;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
-	private boolean ttsQuiet;
+	private boolean quiet;
 	private Thread routingThread;
 	private SdRouter sdRouter;
 	private boolean bikeMode;
@@ -68,7 +68,7 @@ public class MainApplication extends Application implements LocationListener, On
     	}
 
     	tts = new TextToSpeech(this, this);
-    	ttsQuiet = false;
+    	quiet = false;
     	
     	mediaPlayer = MediaPlayer.create(this, R.raw.filler8);
     	
@@ -84,6 +84,8 @@ public class MainApplication extends Application implements LocationListener, On
     @Override
     public void onTerminate() {
     	super.onTerminate();
+    	tts.shutdown();
+    	mediaPlayer.release();
     	graph.close();
     }
     
@@ -91,8 +93,9 @@ public class MainApplication extends Application implements LocationListener, On
     	this.appListener = appListener;
     };
     
-    public void setTtsQuiet(boolean ttsQuiet) {
-    	this.ttsQuiet = ttsQuiet;
+    public void setQuiet(boolean quiet) {
+    	this.quiet = quiet;
+    	if (mediaPlayer.isPlaying()) mediaPlayer.pause();
     }
     
     /******************************** SD **********************************/
@@ -203,8 +206,10 @@ public class MainApplication extends Application implements LocationListener, On
 	                    	}
 	                    	speak(msg, isImportant);
 	                    } else {
-	                    	if (guide.getSilence() > 30 && !mediaPlayer.isPlaying()) {
-	                    		mediaPlayer.start();
+	                    	if (guide.getSilence() > 30 && !mediaPlayer.isPlaying() && !tts.isSpeaking()) {
+	                    		if (!quiet) {
+	                    			mediaPlayer.start();
+	                    		}
 	                    	}
 	                    }
 	                    
@@ -249,7 +254,7 @@ public class MainApplication extends Application implements LocationListener, On
 
 	public void speak(String msg, boolean now) {
 		int queueMode = now ? QUEUE_FLUSH : QUEUE_ADD;
-		if (!ttsQuiet) tts.speak(msg, queueMode, null);
+		if (!quiet) tts.speak(msg, queueMode, null);
 	}
 	
 	@Override
