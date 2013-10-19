@@ -144,7 +144,14 @@ implements MarkerSelectListener, AppListener {
 	
 	@Override
 	public void onLocate(Locator loc) {
-		lblSpeed.setText(loc.getKmh() + " km/h");
+		int kmh = loc.getKmh();
+		if (kmh > 200) {
+			lblSpeed.setText("too fast");
+		} else if (kmh < 1) {
+			lblSpeed.setText("too slow");
+		} else {
+			lblSpeed.setText(kmh + " km/h");
+		}
 	}
 
 	@Override
