@@ -17,6 +17,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Environment;
 import android.speech.tts.TextToSpeech;
@@ -29,7 +30,7 @@ import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
-public class MainApplication extends Application implements LocationListener, OnInitListener {
+public class MainApplication extends Application implements LocationListener, OnInitListener, OnCompletionListener {
 
 	private LocationManager gps;
 	private TextToSpeech tts;
@@ -37,13 +38,14 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdGuide guide;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
-	private boolean quiet;
+	private boolean shupUp;
 	private Thread routingThread;
 	private SdRouter sdRouter;
 	private boolean bikeMode;
 	private long[] jitters; // Coords, nano-long coded
 	private int nJitters;
 	private MediaPlayer mediaPlayer;
+	private int mpNextStart;
 	
 	private double lastLat;
 	private double lastLon;
@@ -68,9 +70,10 @@ public class MainApplication extends Application implements LocationListener, On
     	}
 
     	tts = new TextToSpeech(this, this);
-    	quiet = false;
+    	shupUp = false;
     	
     	mediaPlayer = MediaPlayer.create(this, R.raw.filler8);
+    	mediaPlayer.setOnCompletionListener(this);
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
         mapFile = new File(getSdDir(), "snapp.map");
@@ -94,7 +97,8 @@ public class MainApplication extends Application implements LocationListener, On
     };
     
     public void setQuiet(boolean quiet) {
-    	this.quiet = quiet;
+    	this.shupUp = quiet;
+    	if (!quiet) mpNextStart = 0;
     	if (mediaPlayer.isPlaying()) mediaPlayer.pause();
     }
     
@@ -205,13 +209,8 @@ public class MainApplication extends Application implements LocationListener, On
 	                    		isImportant |= (TURN == aps[i].getAdviceType());
 	                    	}
 	                    	speak(msg, isImportant);
-	                    } else {
-	                    	if (guide.getSilence() > 30 && !mediaPlayer.isPlaying() && !tts.isSpeaking()) {
-	                    		if (!quiet) {
-	                    			mediaPlayer.start();
-	                    		}
-	                    	}
-	                    }
+
+	                    } else if (guide.getSilence() > 30) mpPlay();
 	                    
 	                } else {
 	                	if (nJitters == jitters.length) {
@@ -254,11 +253,32 @@ public class MainApplication extends Application implements LocationListener, On
 
 	public void speak(String msg, boolean now) {
 		int queueMode = now ? QUEUE_FLUSH : QUEUE_ADD;
-		if (!quiet) tts.speak(msg, queueMode, null);
+		mpPause();
+		if (!shupUp) tts.speak(msg, queueMode, null);
 	}
 	
 	@Override
 	public void onInit(int status) {
+	}
+
+	/***************************** MediaPlayer *****************************/
+	
+	private void mpPause() {
+		if (mediaPlayer.isPlaying()) {
+			mediaPlayer.pause();
+		}
+	}
+	
+	private void mpPlay() {
+		int ts = (int) (System.currentTimeMillis() / 1000);
+		if (mpNextStart < ts && !mediaPlayer.isPlaying() && !tts.isSpeaking() && !shupUp) {
+			mediaPlayer.start();
+		}
+	}
+	
+	@Override
+	public void onCompletion(MediaPlayer mp) {
+		mpNextStart = (int) (System.currentTimeMillis() / 1000) + 300; // in 5 Min.
 	}
 
 }
