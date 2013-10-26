@@ -72,7 +72,7 @@ public class MainApplication extends Application implements LocationListener, On
     	tts = new TextToSpeech(this, this);
     	shupUp = false;
     	
-    	mediaPlayer = MediaPlayer.create(this, R.raw.filler8);
+    	mediaPlayer = MediaPlayer.create(this, R.raw.snapp);
     	mediaPlayer.setOnCompletionListener(this);
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
