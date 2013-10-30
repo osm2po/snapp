@@ -1,8 +1,8 @@
 package de.cm.osm2po.snapp;
 
-import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_POINT_FIND;
-import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_ROUTE_CALC;
-import static de.cm.osm2po.sd.guide.SdAdviceType.ERR_ROUTE_LOST;
+import static de.cm.osm2po.sd.guide.SdMessage.ERR_POINT_FIND;
+import static de.cm.osm2po.sd.guide.SdMessage.ERR_ROUTE_CALC;
+import static de.cm.osm2po.sd.guide.SdMessage.ERR_ROUTE_LOST;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toLat;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toLon;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;

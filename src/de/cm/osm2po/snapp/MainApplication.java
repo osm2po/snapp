@@ -2,8 +2,7 @@ package de.cm.osm2po.snapp;
 
 import static android.speech.tts.TextToSpeech.QUEUE_ADD;
 import static android.speech.tts.TextToSpeech.QUEUE_FLUSH;
-import static de.cm.osm2po.sd.guide.SdAdviceType.INF_ROUTE_CALC;
-import static de.cm.osm2po.sd.guide.SdAdviceType.TURN;
+import static de.cm.osm2po.sd.guide.SdMessage.INF_ROUTE_CALC;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 
 import java.io.File;
@@ -200,17 +199,12 @@ public class MainApplication extends Application implements LocationListener, On
 	                    // alarm range
 	                    int ms = locator.getMeterStone();
 	                    int kmh = locator.getKmh();
-	                    SdAdvice[] aps = guide.lookAhead(ms, kmh);
-	                    if (aps.length > 0) {
-	                    	String msg = "";
-	                    	boolean isImportant = false;
-	                    	for (int i = 0; i < aps.length; i++) {
-	                    		msg += aps[i].toString() + " ";
-	                    		isImportant |= (TURN == aps[i].getAdviceType());
-	                    	}
-	                    	speak(msg, isImportant);
-
-	                    } else if (guide.getSilence() > 30) mpPlay();
+	                    SdAdvice adv = guide.lookAhead(ms, kmh);
+	                    if (adv != null) {
+	                    	speak(adv.getMessageText(), true);
+	                    } else if (guide.getSilence() > 30) {
+	                    	mpPlay(); 
+	                    }
 	                    
 	                } else {
 	                	if (nJitters == jitters.length) {
