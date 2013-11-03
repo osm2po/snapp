@@ -1,6 +1,6 @@
 package de.cm.osm2po.snapp;
 
-import de.cm.osm2po.sd.guide.SdGuide.Locator;
+import de.cm.osm2po.sd.guide.SdSampleGuide.Locator;
 
 
 public interface AppListener {

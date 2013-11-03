@@ -37,7 +37,7 @@ import android.view.View.OnClickListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import de.cm.osm2po.sd.guide.SdGuide.Locator;
+import de.cm.osm2po.sd.guide.SdSampleGuide.Locator;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -181,7 +181,7 @@ implements MarkerSelectListener, AppListener {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
 			markersLayer.moveMarker(markerType, geoPoint);
 		} else {
-			app.speak(toast(ERR_POINT_FIND.getMessage()), false);
+			app.speak(toast(ERR_POINT_FIND.getMessageText()), false);
 		}
 		
 		route(0);
@@ -195,7 +195,7 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					app.speak(toast(ERR_ROUTE_CALC.getMessage()), false);
+					app.speak(toast(ERR_ROUTE_CALC.getMessageText()), false);
 				}
 			});
 		}
@@ -219,15 +219,15 @@ implements MarkerSelectListener, AppListener {
 
 	@Override
 	public void onRouteLost(long[] jitterCoords) {
-		app.speak(ERR_ROUTE_LOST.getMessage(), false);
+		app.speak(ERR_ROUTE_LOST.getMessageText(), false);
 		int n = jitterCoords.length;
-		long c =  jitterCoords[n-2]; // last but one jitter is new Source-TouchPoint
+		long c =  jitterCoords[n-1]; // last jitter is new Source-TouchPoint
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
 		if (tpSource != null) {
 			markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(toLat(c), toLon(c)));
 			markersLayer.moveMarker(SOURCE_MARKER, new GeoPoint(tpSource.getLat(), tpSource.getLon()));
 		}
-		route(jitterCoords[n-1]); // last jitter as direction hint);
+		route(jitterCoords[n-2]); // last but one jitter as direction hint);
 	}
 
 	

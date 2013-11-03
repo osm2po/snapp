@@ -21,9 +21,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.util.Log;
 import de.cm.osm2po.sd.guide.SdAdvice;
-import de.cm.osm2po.sd.guide.SdGuide;
-import de.cm.osm2po.sd.guide.SdGuide.Locator;
+import de.cm.osm2po.sd.guide.SdSampleGuide;
+import de.cm.osm2po.sd.guide.SdSampleGuide.Locator;
 import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
@@ -34,7 +35,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private LocationManager gps;
 	private TextToSpeech tts;
 	private SdGraph graph;
-	private SdGuide guide;
+	private SdSampleGuide guide;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
 	private boolean shupUp;
@@ -69,6 +70,11 @@ public class MainApplication extends Application implements LocationListener, On
     	}
 
     	tts = new TextToSpeech(this, this);
+    	
+    	String earconPath =  new File(getSdDir(), "earcon.wav").getAbsolutePath();
+    	int code = tts.addSpeech("rechts", earconPath);
+    	Log.e("Snapp", ""+code);
+    	
     	shupUp = false;
     	
     	mediaPlayer = MediaPlayer.create(this, R.raw.snapp);
@@ -111,7 +117,7 @@ public class MainApplication extends Application implements LocationListener, On
     		final boolean bikeMode, final long dirHint) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-		speak(INF_ROUTE_CALC.getMessage(), false);
+		speak(INF_ROUTE_CALC.getMessageText(), false);
 
     	routingThread = new Thread(new Runnable() {
 			@Override
@@ -140,7 +146,7 @@ public class MainApplication extends Application implements LocationListener, On
 		}
 
 		SdPath path = sdRouter.findPath(tpSource, tpTarget, dirHint);
-		guide = null == path ? null : new SdGuide(path);
+		guide = null == path ? null : new SdSampleGuide(path);
 		
 		return createGeometry(path);
     }
