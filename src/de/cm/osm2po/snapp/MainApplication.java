@@ -21,10 +21,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
-import android.util.Log;
 import de.cm.osm2po.sd.guide.SdAdvice;
-import de.cm.osm2po.sd.guide.SdSampleGuide;
-import de.cm.osm2po.sd.guide.SdSampleGuide.Locator;
+import de.cm.osm2po.sd.guide.SdHumbleGuide;
+import de.cm.osm2po.sd.guide.SdHumbleGuide.Locator;
 import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
@@ -35,7 +34,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private LocationManager gps;
 	private TextToSpeech tts;
 	private SdGraph graph;
-	private SdSampleGuide guide;
+	private SdHumbleGuide guide;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
 	private boolean shupUp;
@@ -70,14 +69,11 @@ public class MainApplication extends Application implements LocationListener, On
     	}
 
     	tts = new TextToSpeech(this, this);
-    	
-    	String earconPath =  new File(getSdDir(), "earcon.wav").getAbsolutePath();
-    	int code = tts.addSpeech("rechts", earconPath);
-    	Log.e("Snapp", ""+code);
+    	tts.addSpeech("[signal]", getClass().getPackage().getName(), R.raw.signal);
     	
     	shupUp = false;
     	
-    	mediaPlayer = MediaPlayer.create(this, R.raw.snapp);
+    	mediaPlayer = MediaPlayer.create(this, R.raw.silence);
     	mediaPlayer.setOnCompletionListener(this);
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
@@ -146,7 +142,7 @@ public class MainApplication extends Application implements LocationListener, On
 		}
 
 		SdPath path = sdRouter.findPath(tpSource, tpTarget, dirHint);
-		guide = null == path ? null : new SdSampleGuide(path);
+		guide = null == path ? null : new SdHumbleGuide(path);
 		
 		return createGeometry(path);
     }
@@ -207,7 +203,13 @@ public class MainApplication extends Application implements LocationListener, On
 	                    int kmh = locator.getKmh();
 	                    SdAdvice adv = guide.lookAhead(ms, kmh);
 	                    if (adv != null) {
-	                    	speak(adv.getMessageText(), true);
+	                    	String msg = adv.getMessageText();
+	                    	if (msg.contains("Ziel") || msg.contains("Target")) {
+	                    		speak("[signal]", false);
+	                    		speak(msg, false);
+	                    	} else {
+	                    		speak(adv.getMessageText(), true);
+	                    	}
 	                    } else if (guide.getSilence() > 30) {
 	                    	mpPlay(); 
 	                    }

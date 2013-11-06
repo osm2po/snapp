@@ -37,7 +37,7 @@ import android.view.View.OnClickListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import de.cm.osm2po.sd.guide.SdSampleGuide.Locator;
+import de.cm.osm2po.sd.guide.SdHumbleGuide.Locator;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
