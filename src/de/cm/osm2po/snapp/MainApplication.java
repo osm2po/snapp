@@ -20,6 +20,7 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import de.cm.osm2po.sd.guide.SdAdvice;
@@ -96,6 +97,16 @@ public class MainApplication extends Application implements LocationListener, On
     	this.appListener = appListener;
     };
     
+    public void setGpsListening(boolean gpsListening) {
+    	this.gpsListening = gpsListening;
+    	if (gpsListening && !gps.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    		Intent gpsSettings = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+    		gpsSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    		startActivity(gpsSettings);    		
+//			Intent intent = new Intent("android.location.GPS_ENABLED_CHANGE");
+//			intent.putExtra("enabled", true);
+//			sendBroadcast(intent);
+    	}
     public void setGpsListening(boolean gpsListening) {
     	this.gpsListening = gpsListening;
     	if (gpsListening && !gps.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
