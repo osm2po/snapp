@@ -48,6 +48,7 @@ implements MarkerSelectListener, AppListener {
 	private SdTouchPoint tpSource, tpTarget;
 	private long[] geometry;
 	private ToggleButton tglBikeCar;
+	private ToggleButton tglGps;
 	private TextView lblSpeed;
 	private MainApplication app;
 	private MapView mapView;
@@ -64,7 +65,6 @@ implements MarkerSelectListener, AppListener {
 		setContentView(R.layout.activity_main);
 
 		app = (MainApplication) this.getApplication();
-		app.setQuiet(false);
 		if (app.isCalculatingRoute()) progressDialog =  ProgressDialog.show(
 				this, null, "Please wait", true, false);
 
@@ -72,6 +72,14 @@ implements MarkerSelectListener, AppListener {
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {route(0);}
+		});
+		
+		tglGps = (ToggleButton) findViewById(R.id.tglGps);
+		tglGps.setChecked(app.isGpsListening());
+		tglGps.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				app.setGpsListening(tglGps.isChecked());
+			}
 		});
 		
 		lblSpeed = (TextView) findViewById(R.id.lblSpeed);
@@ -114,10 +122,7 @@ implements MarkerSelectListener, AppListener {
 	
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
-		if (item.getItemId() == R.id.menu_app_sleep) {
-	    	app.setQuiet(true);
-		} else if (item.getItemId() == R.id.menu_nav_home) {
-
+		if (item.getItemId() == R.id.menu_nav_home) {
 			GeoPoint gp1 = app.getLastPosition();
 			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
 			if (gp1 != null && gp2 != null) {
