@@ -30,11 +30,15 @@ import org.mapsforge.core.GeoPoint;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 import de.cm.osm2po.sd.guide.SdHumbleGuide.Locator;
@@ -50,6 +54,7 @@ implements MarkerSelectListener, AppListener {
 	private ToggleButton tglBikeCar;
 	private ToggleButton tglGps;
 	private TextView lblSpeed;
+	private EditText txtAddress;
 	private MainApplication app;
 	private MapView mapView;
 	private long nGpsCalls;
@@ -66,8 +71,7 @@ implements MarkerSelectListener, AppListener {
 
 		app = (MainApplication) this.getApplication();
 		if (app.isCalculatingRoute()) progressDialog =  ProgressDialog.show(
-				this, null, "Please wait", true, false);
-
+				this, "Calculating route", "Please wait ...", true, false);
 		
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
@@ -82,7 +86,18 @@ implements MarkerSelectListener, AppListener {
 			}
 		});
 		
-		lblSpeed = (TextView) findViewById(R.id.lblSpeed);
+		txtAddress = (EditText) findViewById(R.id.txtAddress);
+		txtAddress.setImeActionLabel("Find", EditorInfo.IME_ACTION_DONE);
+		txtAddress.setOnEditorActionListener(new OnEditorActionListener() {
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+				if (actionId == EditorInfo.IME_ACTION_DONE) {
+					findAddress(txtAddress.getText().toString());
+				}
+				return false;
+			}
+		});
+		
 		
 		mapView = (MapView) findViewById(R.id.mapView);
 		mapView.setClickable(true);
@@ -90,6 +105,8 @@ implements MarkerSelectListener, AppListener {
 		mapView.setMapFile(app.getMapFile());
 		mapView.getController().setZoom(15);
 		
+		lblSpeed = (TextView) findViewById(R.id.lblSpeed);
+
 		routesLayer = new RoutesLayer();
 		mapView.getOverlays().add(routesLayer);
 
@@ -212,7 +229,7 @@ implements MarkerSelectListener, AppListener {
 		if (tpSource != null && tpTarget != null) {
 			try {
 				progressDialog =  ProgressDialog.show(
-						this, "Calculating route...", "Please wait", true, false);
+						this, "Calculating route", "Please wait ...", true, false);
 				app.route(tpSource, tpTarget, tglBikeCar.isChecked(), dirHint);
 			} catch (Throwable t) {
 				toast("Error\n" + t.getMessage());
@@ -337,6 +354,21 @@ implements MarkerSelectListener, AppListener {
 			
 		} catch (Exception e) {
 			toast("Error: " + e.getMessage());
+		}
+	}
+	
+	private void findAddress (String address) {
+		try {
+			GeoPoint gpAddress = app.findAddress(address);
+			if (gpAddress != null) {
+				mapView.setCenter(gpAddress);
+				mapView.getController().setZoom(14);
+				app.onGps(gpAddress.getLatitude(), gpAddress.getLongitude());
+			} else {
+				toast("Address not found");
+			}
+		} catch (Exception e) {
+			toast(e.getMessage());
 		}
 	}
 

@@ -7,12 +7,15 @@ import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 import org.mapsforge.core.GeoPoint;
 
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -291,6 +294,18 @@ public class MainApplication extends Application implements LocationListener, On
 	@Override
 	public void onCompletion(MediaPlayer mp) {
 		mpNextStart = (int) (System.currentTimeMillis() / 1000) + 300; // in 5 Min.
+	}
+	
+	/************************** Address-Finder  ***************************/
+	
+	public GeoPoint findAddress(String address) throws Exception {
+		Geocoder coder = new Geocoder(this);
+		List<Address> addresses = coder.getFromLocationName(address,5);
+		if (addresses != null && addresses.size() > 0) {
+			Address adr = addresses.get(0);
+			return new GeoPoint(adr.getLatitude(), adr.getLongitude());
+		}
+		return null;
 	}
 
 }
