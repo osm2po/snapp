@@ -107,13 +107,6 @@ public class MainApplication extends Application implements LocationListener, On
 //			intent.putExtra("enabled", true);
 //			sendBroadcast(intent);
     	}
-    public void setGpsListening(boolean gpsListening) {
-    	this.gpsListening = gpsListening;
-    	if (gpsListening && !gps.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			Intent intent = new Intent("android.location.GPS_ENABLED_CHANGE");
-			intent.putExtra("enabled", true);
-			sendBroadcast(intent);
-    	}
     }
     
     public boolean isGpsListening() {
