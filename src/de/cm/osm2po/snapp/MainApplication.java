@@ -12,6 +12,7 @@ import org.mapsforge.core.GeoPoint;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -19,6 +20,7 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import de.cm.osm2po.sd.guide.SdAdvice;
@@ -37,10 +39,10 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdHumbleGuide guide;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
-	private boolean shupUp;
 	private Thread routingThread;
 	private SdRouter sdRouter;
 	private boolean bikeMode;
+	private boolean gpsListening;
 	private long[] jitters; // Coords, nano-long coded
 	private int nJitters;
 	private MediaPlayer mediaPlayer;
@@ -71,8 +73,6 @@ public class MainApplication extends Application implements LocationListener, On
     	tts = new TextToSpeech(this, this);
     	tts.addSpeech("[signal]", getClass().getPackage().getName(), R.raw.signal);
     	
-    	shupUp = false;
-    	
     	mediaPlayer = MediaPlayer.create(this, R.raw.silence);
     	mediaPlayer.setOnCompletionListener(this);
     	
@@ -97,10 +97,20 @@ public class MainApplication extends Application implements LocationListener, On
     	this.appListener = appListener;
     };
     
-    public void setQuiet(boolean quiet) {
-    	this.shupUp = quiet;
-    	if (!quiet) mpNextStart = 0;
-    	if (mediaPlayer.isPlaying()) mediaPlayer.pause();
+    public void setGpsListening(boolean gpsListening) {
+    	this.gpsListening = gpsListening;
+    	if (gpsListening && !gps.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    		Intent gpsSettings = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+    		gpsSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    		startActivity(gpsSettings);    		
+//			Intent intent = new Intent("android.location.GPS_ENABLED_CHANGE");
+//			intent.putExtra("enabled", true);
+//			sendBroadcast(intent);
+    	}
+    }
+    
+    public boolean isGpsListening() {
+    	return gpsListening;
     }
     
     /******************************** SD **********************************/
@@ -236,7 +246,7 @@ public class MainApplication extends Application implements LocationListener, On
 	public void onLocationChanged(Location location) {
 		double lat = location.getLatitude();
 		double lon = location.getLongitude();
-		onGps(lat, lon);
+		if (gpsListening) onGps(lat, lon);
 	}
 
 	@Override
@@ -256,7 +266,7 @@ public class MainApplication extends Application implements LocationListener, On
 	public void speak(String msg, boolean now) {
 		int queueMode = now ? QUEUE_FLUSH : QUEUE_ADD;
 		mpPause();
-		if (!shupUp) tts.speak(msg, queueMode, null);
+		tts.speak(msg, queueMode, null);
 	}
 	
 	@Override
@@ -273,7 +283,7 @@ public class MainApplication extends Application implements LocationListener, On
 	
 	private void mpPlay() {
 		int ts = (int) (System.currentTimeMillis() / 1000);
-		if (mpNextStart < ts && !mediaPlayer.isPlaying() && !tts.isSpeaking() && !shupUp) {
+		if (mpNextStart < ts && !mediaPlayer.isPlaying() && !tts.isSpeaking()) {
 			mediaPlayer.start();
 		}
 	}
