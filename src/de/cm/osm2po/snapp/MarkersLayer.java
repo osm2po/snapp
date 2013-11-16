@@ -27,11 +27,13 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
     	markers = new OverlayItem[nMtes];
     	for (int i = 0; i < nMtes; i++) {
     		MarkerType mte = mtes[i];
-    		BitmapDrawable drawable = (BitmapDrawable) activity.getResources().getDrawable(mte.getIconId());
+    		Drawable drawable = activity.getResources().getDrawable(mte.getIconId());
     		if (mte.isBottomCenter()) {
     			ArrayItemizedOverlay.boundCenterBottom(drawable);
     		} else {
-    			drawable = new BitmapRotatable(drawable.getBitmap());
+    			if (drawable instanceof BitmapDrawable) {
+    				drawable = new RotatableBitmapDrawable(((BitmapDrawable) drawable).getBitmap());
+    			}
     			ArrayItemizedOverlay.boundCenter(drawable);
     		}
     		markers[i] = new OverlayItem(null, mte.getTitle(), null, drawable);
@@ -42,8 +44,8 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	public void moveMarker(MarkerType mte, GeoPoint geoPoint, float rotate) {
 		OverlayItem overlayItem = markers[mte.getIndex()];
 		Drawable drawable = overlayItem.getMarker();
-		if (drawable instanceof BitmapRotatable) {
-			((BitmapRotatable) drawable).setRotate(rotate);
+		if (drawable instanceof RotatableBitmapDrawable) {
+			((RotatableBitmapDrawable) drawable).rotate(rotate);
 		}
 		moveMarker(mte, geoPoint);
 	}
