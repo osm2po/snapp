@@ -8,6 +8,7 @@ import org.mapsforge.android.maps.overlay.OverlayItem;
 import org.mapsforge.core.GeoPoint;
 
 import android.app.Activity;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
@@ -26,15 +27,25 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
     	markers = new OverlayItem[nMtes];
     	for (int i = 0; i < nMtes; i++) {
     		MarkerType mte = mtes[i];
-    		Drawable drawable = activity.getResources().getDrawable(mte.getIconId());
+    		BitmapDrawable drawable = (BitmapDrawable) activity.getResources().getDrawable(mte.getIconId());
     		if (mte.isBottomCenter()) {
     			ArrayItemizedOverlay.boundCenterBottom(drawable);
     		} else {
+    			drawable = new BitmapRotatable(drawable.getBitmap());
     			ArrayItemizedOverlay.boundCenter(drawable);
     		}
     		markers[i] = new OverlayItem(null, mte.getTitle(), null, drawable);
     		addItem(markers[i]);
     	}
+	}
+
+	public void moveMarker(MarkerType mte, GeoPoint geoPoint, float rotate) {
+		OverlayItem overlayItem = markers[mte.getIndex()];
+		Drawable drawable = overlayItem.getMarker();
+		if (drawable instanceof BitmapRotatable) {
+			((BitmapRotatable) drawable).setRotate(rotate);
+		}
+		moveMarker(mte, geoPoint);
 	}
 	
 	public void moveMarker(MarkerType mte, GeoPoint geoPoint) {

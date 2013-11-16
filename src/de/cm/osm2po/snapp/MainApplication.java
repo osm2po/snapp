@@ -102,7 +102,7 @@ public class MainApplication extends Application implements LocationListener, On
     
     public void setGpsListening(boolean gpsListening) {
     	this.gpsListening = gpsListening;
-    	if (gpsListening && !gps.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    	if (!isGpsAvailable()) {
     		Intent gpsSettings = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
     		gpsSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     		startActivity(gpsSettings);    		
@@ -114,6 +114,10 @@ public class MainApplication extends Application implements LocationListener, On
     
     public boolean isGpsListening() {
     	return gpsListening;
+    }
+    
+    public boolean isGpsAvailable() {
+    	return gps.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
     
     /******************************** SD **********************************/
@@ -192,7 +196,7 @@ public class MainApplication extends Application implements LocationListener, On
     }
 
     private boolean isOnGpsBusy;
-    public void onGps(double lat, double lon) {
+    public void onGps(double lat, double lon, float bearing) {
     	lastLat = lat;
     	lastLon = lon;
     	
@@ -201,7 +205,7 @@ public class MainApplication extends Application implements LocationListener, On
     	
     	try {
 			if (appListener != null) {
-				appListener.onLocationChanged(lat, lon);
+				appListener.onLocationChanged(lat, lon, bearing);
 				if (guide != null) {
 	                Locator locator = this.guide.locate(lat, lon);
 	                appListener.onLocate(locator);
@@ -249,7 +253,7 @@ public class MainApplication extends Application implements LocationListener, On
 	public void onLocationChanged(Location location) {
 		double lat = location.getLatitude();
 		double lon = location.getLongitude();
-		if (gpsListening) onGps(lat, lon);
+		if (gpsListening) onGps(lat, lon, location.getBearing());
 	}
 
 	@Override

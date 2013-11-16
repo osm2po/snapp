@@ -5,10 +5,10 @@ package de.cm.osm2po.snapp;
 public enum MarkerType {
 	// TODO NYI handle index as zindex
 	HOME_MARKER(0, "Home", R.drawable.ic_home32, true),
-	TOUCH_MARKER(1, "", R.drawable.ic_marker16, false),
+	TOUCH_MARKER(1, "Touch", R.drawable.ic_marker16, false),
 	SOURCE_MARKER(2, "Source", R.drawable.ic_source32, true),
 	TARGET_MARKER(3, "Target", R.drawable.ic_target32, true),
-	GPS_MARKER(4, "GPS Location", R.drawable.ic_gps40, false);
+	GPS_MARKER(4, "GPS", R.drawable.ic_north32, false);
 
 	private int index;
 	private String title;

@@ -79,7 +79,6 @@ implements MarkerSelectListener, AppListener {
 		});
 		
 		tglGps = (ToggleButton) findViewById(R.id.tglGps);
-		tglGps.setChecked(app.isGpsListening());
 		tglGps.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				app.setGpsListening(tglGps.isChecked());
@@ -87,11 +86,11 @@ implements MarkerSelectListener, AppListener {
 		});
 		
 		txtAddress = (EditText) findViewById(R.id.txtAddress);
-		txtAddress.setImeActionLabel("Find", EditorInfo.IME_ACTION_DONE);
+		txtAddress.setImeActionLabel("Find", EditorInfo.IME_ACTION_SEARCH);
 		txtAddress.setOnEditorActionListener(new OnEditorActionListener() {
 			@Override
 			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-				if (actionId == EditorInfo.IME_ACTION_DONE) {
+				if (actionId == EditorInfo.IME_ACTION_SEARCH) {
 					findAddress(txtAddress.getText().toString());
 				}
 				return false;
@@ -132,6 +131,12 @@ implements MarkerSelectListener, AppListener {
     }
 	
 	@Override
+	protected void onResume() {
+		super.onResume();
+		tglGps.setChecked(app.isGpsListening() && app.isGpsAvailable());
+	}
+	
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.menu_main, menu);
 		return true;
@@ -156,9 +161,9 @@ implements MarkerSelectListener, AppListener {
 	}
 	
 	@Override
-	public void onLocationChanged(double lat, double lon) {
+	public void onLocationChanged(double lat, double lon, float bearing) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
-		markersLayer.moveMarker(GPS_MARKER, geoPoint);
+		markersLayer.moveMarker(GPS_MARKER, geoPoint, bearing);
 		if (nGpsCalls == 0) mapView.setCenter(geoPoint);
 		if (++nGpsCalls > 10) nGpsCalls = 0;
 	}
@@ -182,7 +187,7 @@ implements MarkerSelectListener, AppListener {
 		double lon = geoPoint.getLongitude();
 		
 		if (GPS_MARKER == markerType) {
-			app.onGps(lat, lon); // Simulation
+			app.onGps(lat, lon, 0); // Simulation
 			return;
 		}
 		
@@ -357,19 +362,21 @@ implements MarkerSelectListener, AppListener {
 		}
 	}
 	
-	private void findAddress (String address) {
+	private boolean findAddress (String address) {
 		try {
 			GeoPoint gpAddress = app.findAddress(address);
 			if (gpAddress != null) {
 				mapView.setCenter(gpAddress);
 				mapView.getController().setZoom(14);
-				app.onGps(gpAddress.getLatitude(), gpAddress.getLongitude());
+				app.onGps(gpAddress.getLatitude(), gpAddress.getLongitude(), 0);
+				return true;
 			} else {
 				toast("Address not found");
 			}
 		} catch (Exception e) {
 			toast(e.getMessage());
 		}
+		return false;
 	}
 
 }
