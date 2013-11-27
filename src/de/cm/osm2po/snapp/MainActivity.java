@@ -29,6 +29,7 @@ import org.mapsforge.android.maps.MapView;
 import org.mapsforge.core.GeoPoint;
 
 import android.app.ProgressDialog;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -53,6 +54,7 @@ implements MarkerSelectListener, AppListener {
 	private long[] geometry;
 	private ToggleButton tglBikeCar;
 	private ToggleButton tglGps;
+	private ToggleButton tglQuiet;
 	private TextView lblSpeed;
 	private EditText txtAddress;
 	private MainApplication app;
@@ -82,6 +84,13 @@ implements MarkerSelectListener, AppListener {
 		tglGps.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				app.setGpsListening(tglGps.isChecked());
+			}
+		});
+
+		tglQuiet = (ToggleButton) findViewById(R.id.tglQuiet);
+		tglQuiet.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				app.setQuiet(tglQuiet.isChecked());
 			}
 		});
 		
@@ -129,6 +138,10 @@ implements MarkerSelectListener, AppListener {
     	app.setAppListener(null); // UnChain
     	saveInstanceState();
     }
+	
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+	}
 	
 	@Override
 	protected void onResume() {

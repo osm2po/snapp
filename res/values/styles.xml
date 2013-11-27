@@ -17,5 +17,6 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
     <color name="lightred">#A00</color>
-
+    <color name="background">#789</color>
+    
 </resources>

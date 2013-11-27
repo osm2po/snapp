@@ -2,45 +2,65 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
-	tools:context=".MainActivity" >
+    tools:context=".MainActivity" >
     
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_margin="0dp"
+        android:padding="@dimen/padding_none" >
 	        
 	        <ToggleButton
-		        android:id="@+id/tglGps"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:minHeight="24dp"
-		        android:minWidth="32dp"
-		        android:textOff="@string/tgl_gps_sim"
-		        android:textOn="@string/tgl_gps_nav" />
+	            android:id="@+id/tglGps"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:minHeight="12dp"
+	            android:minWidth="36dp"
+	            android:padding="@dimen/padding_none"
+	            android:textOff="@string/tgl_gps_sim"
+	            android:textOn="@string/tgl_gps_nav"
+	            android:textSize="@dimen/font_small" />
 	        
 	        <ToggleButton
-		        android:id="@+id/tglBikeCar"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:minHeight="24dp"
-		        android:minWidth="32dp"
-		        android:textOff="@string/tgl_mode_car"
-		        android:textOn="@string/tgl_mode_bike" />
+	            android:id="@+id/tglBikeCar"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:minHeight="12dp"
+	            android:minWidth="36dp"
+	            android:padding="@dimen/padding_none"
+	            android:textOff="@string/tgl_mode_car"
+	            android:textOn="@string/tgl_mode_bike"
+	            android:textSize="@dimen/font_small" />
 
+	        <ToggleButton
+	            android:id="@+id/tglQuiet"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:minHeight="12dp"
+	            android:minWidth="36dp"
+	            android:padding="@dimen/padding_none"
+	            android:textOff="@string/tgl_tone_on"
+	            android:textOn="@string/tgl_tone_off"
+	            android:textSize="@dimen/font_small" />
+	        
 	        <EditText
 	            android:id="@+id/txtAddress"
-	            android:inputType="text"
 	            android:layout_width="0dp"
 	            android:layout_height="wrap_content"
 	            android:layout_weight="1"
+	            android:ems="10"
 	            android:imeOptions="actionSearch"
-	            android:ems="10" />
+	            android:inputType="text"
+	            android:textSize="@dimen/font_small" />
 
 	        <TextView
 	            android:id="@+id/lblSpeed"
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
-	            android:gravity="right" />
+	            android:gravity="right"
+	            android:textSize="@dimen/font_small" />
 	        
     </LinearLayout>
 

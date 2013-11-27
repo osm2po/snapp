@@ -50,6 +50,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private int nJitters;
 	private MediaPlayer mediaPlayer;
 	private int mpNextStart;
+	private boolean quiet;
 	
 	private double lastLat;
 	private double lastLon;
@@ -270,7 +271,16 @@ public class MainApplication extends Application implements LocationListener, On
 
 	/******************************** TTS *********************************/
 
+	public void setQuiet(boolean quiet) {
+		this.quiet = quiet;
+		if (quiet) {
+			if (tts.isSpeaking()) tts.stop();
+			if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+		}
+	}
+	
 	public void speak(String msg, boolean now) {
+		if (this.quiet) return;
 		int queueMode = now ? QUEUE_FLUSH : QUEUE_ADD;
 		mpPause();
 		tts.speak(msg, queueMode, null);
@@ -289,6 +299,7 @@ public class MainApplication extends Application implements LocationListener, On
 	}
 	
 	private void mpPlay() {
+		if (this.quiet) return;
 		int ts = (int) (System.currentTimeMillis() / 1000);
 		if (mpNextStart < ts && !mediaPlayer.isPlaying() && !tts.isSpeaking()) {
 			mediaPlayer.start();
