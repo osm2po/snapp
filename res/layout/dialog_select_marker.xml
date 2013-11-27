@@ -3,7 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="horizontal" >
+    android:background="@color/black"
+    android:orientation="horizontal"
+    android:showDividers="none" >
 
     <ImageButton
         android:id="@+id/btn_source"

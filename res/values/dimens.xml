@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="font_small">8dp</dimen>
+    <dimen name="font_small">10dp</dimen>
+    <dimen name="font_medium">12dp</dimen>
     <dimen name="padding_none">0dp</dimen>
 </resources>
