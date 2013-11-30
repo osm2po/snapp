@@ -17,10 +17,12 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	private Activity activity;
 	private OverlayItem[] markers; // Erlaubt den Zugriff via MarkerTypeEnum
 	private MarkerSelectListener selectMarkerListener;
+	private MarkerSelectDialog markerSelectDialog;
 
 	public MarkersLayer(Activity activity) {
 		super(null);
 		this.activity = activity;
+		markerSelectDialog = new MarkerSelectDialog(this);
 		
     	MarkerType[] mtes = MarkerType.values();
     	int nMtes = mtes.length;
@@ -71,8 +73,7 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	@Override
 	public boolean onLongPress(GeoPoint geoPoint, MapView mapView) {
 		moveMarker(TOUCH_MARKER, geoPoint);
-		MarkerSelectDialog dlg = new MarkerSelectDialog(this);
-		dlg.show(activity.getFragmentManager(), "dlg_marker");
+		markerSelectDialog.show(activity.getFragmentManager(), "dlg_marker");
 		return true;
 	}
 

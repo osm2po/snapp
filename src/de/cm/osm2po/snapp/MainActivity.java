@@ -60,7 +60,7 @@ implements MarkerSelectListener, AppListener {
 	private MainApplication app;
 	private MapView mapView;
 	private long nGpsCalls;
-	ProgressDialog progressDialog;
+	private ProgressDialog progressDialog;
 	
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
 	private static final int STATE_FILE_VERSION = 2;
@@ -70,10 +70,12 @@ implements MarkerSelectListener, AppListener {
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		progressDialog = new ProgressDialog(this, R.style.StyledDialog);
+		progressDialog.setMessage("Calculating Route...");
 
 		app = (MainApplication) this.getApplication();
-		if (app.isCalculatingRoute()) progressDialog =  ProgressDialog.show(
-				this, "Calculating route", "Please wait ...", true, false);
+		if (app.isCalculatingRoute()) progressDialog.show();
 		
 		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
 		tglBikeCar.setOnClickListener(new OnClickListener() {
@@ -147,6 +149,7 @@ implements MarkerSelectListener, AppListener {
 	protected void onResume() {
 		super.onResume();
 		tglGps.setChecked(app.isGpsListening() && app.isGpsAvailable());
+		tglQuiet.setChecked(app.isQuiet());
 	}
 	
 	@Override
@@ -239,15 +242,15 @@ implements MarkerSelectListener, AppListener {
 				}
 			});
 		}
-		if (progressDialog != null) progressDialog.dismiss();
+		progressDialog.dismiss();
 	}
 
 	private void route(long dirHint) {
 		if (app.isCalculatingRoute()) return;
 		if (tpSource != null && tpTarget != null) {
 			try {
-				progressDialog =  ProgressDialog.show(
-						this, "Calculating route", "Please wait ...", true, false);
+				progressDialog.show();
+				lblSpeed.setText(null);
 				app.route(tpSource, tpTarget, tglBikeCar.isChecked(), dirHint);
 			} catch (Throwable t) {
 				toast("Error\n" + t.getMessage());

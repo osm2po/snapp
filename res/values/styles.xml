@@ -12,6 +12,10 @@
         -->
     </style>
 
+    <style name="StyledDialog" parent="@android:style/Theme.Dialog">
+    	<item name="android:windowBackground">@color/black</item>
+	</style>
+    
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->

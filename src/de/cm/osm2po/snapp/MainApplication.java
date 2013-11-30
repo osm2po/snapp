@@ -279,6 +279,10 @@ public class MainApplication extends Application implements LocationListener, On
 		}
 	}
 	
+	public boolean isQuiet() {
+		return this.quiet;
+	}
+	
 	public void speak(String msg, boolean now) {
 		if (this.quiet) return;
 		int queueMode = now ? QUEUE_FLUSH : QUEUE_ADD;

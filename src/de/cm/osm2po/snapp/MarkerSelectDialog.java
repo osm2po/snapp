@@ -4,12 +4,14 @@ import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.HOME_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
+import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 
 public class MarkerSelectDialog extends DialogFragment implements OnClickListener {
@@ -25,7 +27,7 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 			Bundle savedInstanceState) {
 
 		View view = inflater.inflate(R.layout.dialog_select_marker, container);
-		
+
 		ImageButton btnSource = (ImageButton) view.findViewById(R.id.btn_source);
 		btnSource.setOnClickListener(this);
 		ImageButton btnTarget = (ImageButton) view.findViewById(R.id.btn_target);
@@ -38,6 +40,13 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
         return view;
 	}
 
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+		Dialog dialog = super.onCreateDialog(savedInstanceState);
+		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+		return  dialog;
+	}
+	
 	@Override
 	public void onClick(View v) {
 		if (v.getId() == R.id.btn_source) {
