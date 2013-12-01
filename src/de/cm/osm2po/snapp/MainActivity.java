@@ -52,9 +52,9 @@ implements MarkerSelectListener, AppListener {
 	private MarkersLayer markersLayer;
 	private SdTouchPoint tpSource, tpTarget;
 	private long[] geometry;
-	private ToggleButton tglBikeCar;
+	private ToggleButton tglCar;
 	private ToggleButton tglGps;
-	private ToggleButton tglQuiet;
+	private ToggleButton tglTone;
 	private TextView lblSpeed;
 	private EditText txtAddress;
 	private MainApplication app;
@@ -77,8 +77,8 @@ implements MarkerSelectListener, AppListener {
 		app = (MainApplication) this.getApplication();
 		if (app.isCalculatingRoute()) progressDialog.show();
 		
-		tglBikeCar = (ToggleButton) findViewById(R.id.tglBikeCar);
-		tglBikeCar.setOnClickListener(new OnClickListener() {
+		tglCar = (ToggleButton) findViewById(R.id.tglCar);
+		tglCar.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {route(0);}
 		});
 		
@@ -89,10 +89,10 @@ implements MarkerSelectListener, AppListener {
 			}
 		});
 
-		tglQuiet = (ToggleButton) findViewById(R.id.tglQuiet);
-		tglQuiet.setOnClickListener(new OnClickListener() {
+		tglTone = (ToggleButton) findViewById(R.id.tglTone);
+		tglTone.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				app.setQuiet(tglQuiet.isChecked());
+				app.setQuiet(!tglTone.isChecked());
 			}
 		});
 		
@@ -143,13 +143,14 @@ implements MarkerSelectListener, AppListener {
 	
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
+		// Empty for portrait-mode
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
 		tglGps.setChecked(app.isGpsListening() && app.isGpsAvailable());
-		tglQuiet.setChecked(app.isQuiet());
+		tglTone.setChecked(!app.isQuiet());
 	}
 	
 	@Override
@@ -251,7 +252,7 @@ implements MarkerSelectListener, AppListener {
 			try {
 				progressDialog.show();
 				lblSpeed.setText(null);
-				app.route(tpSource, tpTarget, tglBikeCar.isChecked(), dirHint);
+				app.route(tpSource, tpTarget, !tglCar.isChecked(), dirHint);
 			} catch (Throwable t) {
 				toast("Error\n" + t.getMessage());
 			}
@@ -288,7 +289,7 @@ implements MarkerSelectListener, AppListener {
 			OutputStream os = new FileOutputStream(STATE_FILE);
 			DataOutputStream dos = new DataOutputStream(os);
 			dos.writeInt(STATE_FILE_VERSION);
-			dos.writeBoolean(tglBikeCar.isChecked());
+			dos.writeBoolean(tglCar.isChecked());
 			
 			dos.writeInt(mapView.getMapPosition().getZoomLevel());
 			GeoPoint center = mapView.getMapPosition().getMapCenter(); 
@@ -326,7 +327,7 @@ implements MarkerSelectListener, AppListener {
 				return;
 			}
 			
-			tglBikeCar.setChecked(dis.readBoolean());
+			tglCar.setChecked(dis.readBoolean());
 			
 			int zoomLevel = dis.readInt();
 			mapView.getController().setZoom(zoomLevel);

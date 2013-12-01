@@ -12,13 +12,13 @@ public enum MarkerType {
 
 	private int index;
 	private String title;
-	private int iconId;
+	private int iconResourceId;
 	private boolean bottomCenter;
 	
-	private MarkerType(int index, String title, int iconId, boolean bottomCenter) {
+	private MarkerType(int index, String title, int iconResourceId, boolean bottomCenter) {
 		this.index = index;
 		this.title = title;
-		this.iconId = iconId;
+		this.iconResourceId = iconResourceId;
 		this.bottomCenter = bottomCenter;
 	}
 	
@@ -31,7 +31,7 @@ public enum MarkerType {
 	}
 	
 	public int getIconId() {
-		return this.iconId;
+		return this.iconResourceId;
 	}
 	
 	public boolean isBottomCenter() {

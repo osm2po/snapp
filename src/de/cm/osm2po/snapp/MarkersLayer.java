@@ -22,7 +22,7 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	public MarkersLayer(Activity activity) {
 		super(null);
 		this.activity = activity;
-		markerSelectDialog = new MarkerSelectDialog(this);
+		markerSelectDialog = new MarkerSelectDialog();
 		
     	MarkerType[] mtes = MarkerType.values();
     	int nMtes = mtes.length;

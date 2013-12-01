@@ -25,27 +25,27 @@
 	            android:textSize="@dimen/font_small" />
 	        
 	        <ToggleButton
-	            android:id="@+id/tglBikeCar"
+	            android:id="@+id/tglCar"
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
 	            android:minHeight="12dp"
 	            android:minWidth="36dp"
 	            android:padding="@dimen/padding_none"
 	            android:textColor="@color/white"
-	            android:textOff="@string/tgl_mode_car"
-	            android:textOn="@string/tgl_mode_bike"
+	            android:textOn="@string/tgl_mode_car"
+	            android:textOff="@string/tgl_mode_bike"
 	            android:textSize="@dimen/font_small" />
 
 	        <ToggleButton
-	            android:id="@+id/tglQuiet"
+	            android:id="@+id/tglTone"
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
 	            android:minHeight="12dp"
 	            android:minWidth="36dp"
 	            android:padding="@dimen/padding_none"
 	            android:textColor="@color/white"
-	            android:textOff="@string/tgl_tone_on"
-	            android:textOn="@string/tgl_tone_off"
+	            android:textOff="@string/tgl_tone_off"
+	            android:textOn="@string/tgl_tone_on"
 	            android:textSize="@dimen/font_small" />
 	        
 	        <EditText

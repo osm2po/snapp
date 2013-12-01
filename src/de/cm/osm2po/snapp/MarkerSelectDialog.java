@@ -4,6 +4,7 @@ import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.HOME_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
+import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
@@ -16,12 +17,6 @@ import android.widget.ImageButton;
 
 public class MarkerSelectDialog extends DialogFragment implements OnClickListener {
 
-	private MarkerSelectListener selectMarkerListener;
-	
-	public MarkerSelectDialog(MarkerSelectListener selectMarkerListener) {
-		this.selectMarkerListener = selectMarkerListener;
-	}
-	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -49,18 +44,16 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 	
 	@Override
 	public void onClick(View v) {
-		if (v.getId() == R.id.btn_source) {
-			dismiss();
-			selectMarkerListener.onMarkerSelected(SOURCE_MARKER);
-		} else if (v.getId() == R.id.btn_target) {
-			dismiss();
-			selectMarkerListener.onMarkerSelected(TARGET_MARKER);
-		} else if (v.getId() == R.id.btn_gps_simu) {
-			dismiss();
-			selectMarkerListener.onMarkerSelected(GPS_MARKER);
-		} else if (v.getId() == R.id.btn_home) {
-			dismiss();
-			selectMarkerListener.onMarkerSelected(HOME_MARKER);
+		dismiss();
+		Activity activity = this.getActivity();
+		if (activity instanceof MarkerSelectListener) {
+			MarkerSelectListener msl = (MarkerSelectListener) activity;
+			switch (v.getId()) {
+			case R.id.btn_source: msl.onMarkerSelected(SOURCE_MARKER); break;
+			case R.id.btn_target: msl.onMarkerSelected(TARGET_MARKER); break;
+			case R.id.btn_gps_simu: msl.onMarkerSelected(GPS_MARKER); break;
+			case R.id.btn_home: msl.onMarkerSelected(HOME_MARKER); break;
+			}
 		}
 	}
 
