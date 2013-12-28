@@ -2,7 +2,7 @@ package de.cm.osm2po.snapp;
 
 import static android.speech.tts.TextToSpeech.QUEUE_ADD;
 import static android.speech.tts.TextToSpeech.QUEUE_FLUSH;
-import static de.cm.osm2po.sd.guide.SdMessage.INF_ROUTE_CALC;
+import static de.cm.osm2po.sd.guide.SdMessage.MSG_INF_ROUTE_CALC;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 
 import java.io.File;
@@ -26,9 +26,10 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
-import de.cm.osm2po.sd.guide.SdAdvice;
-import de.cm.osm2po.sd.guide.SdHumbleGuide;
-import de.cm.osm2po.sd.guide.SdHumbleGuide.Locator;
+import de.cm.osm2po.sd.guide.SdEvent;
+import de.cm.osm2po.sd.guide.SdGuide;
+import de.cm.osm2po.sd.guide.SdLocation;
+import de.cm.osm2po.sd.guide.SdMessage;
 import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
@@ -39,11 +40,12 @@ public class MainApplication extends Application implements LocationListener, On
 	private LocationManager gps;
 	private TextToSpeech tts;
 	private SdGraph graph;
-	private SdHumbleGuide guide;
+	private SdGuide guide;
+	private SdPath path;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
 	private Thread routingThread;
-	private SdRouter sdRouter;
+	private SdRouter router;
 	private boolean bikeMode;
 	private boolean gpsListening;
 	private long[] jitters; // Coords, nano-long coded
@@ -131,7 +133,7 @@ public class MainApplication extends Application implements LocationListener, On
     		final boolean bikeMode, final long dirHint) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-		speak(INF_ROUTE_CALC.getMessageText(), false);
+		speak(MSG_INF_ROUTE_CALC.getMessage(), false);
 
     	routingThread = new Thread(new Runnable() {
 			@Override
@@ -154,22 +156,22 @@ public class MainApplication extends Application implements LocationListener, On
     private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget,
     		boolean bikeMode, long dirHint) {
 		File cacheFile = new File(getCacheDir(), "osm2po.sd");
-		if (null == sdRouter || bikeMode != this.bikeMode) {
+		if (null == router || bikeMode != this.bikeMode) {
 			this.bikeMode = bikeMode;
-			sdRouter = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
+			router = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
 		}
 
-		SdPath path = sdRouter.findPath(tpSource, tpTarget, dirHint);
-		guide = null == path ? null : new SdHumbleGuide(path);
+		path = router.findPath(tpSource, tpTarget, dirHint);
+		guide = (null == path) ? null : new SdGuide(SdEvent.create(path));
 		
-		return createGeometry(path);
+		return createGeometry();
     }
     
     public boolean isGuiding() {
     	return guide != null;
     }
     
-    private long[] createGeometry(SdPath path) {
+    private long[] createGeometry() {
         if (null == path) return null;
         int nEdges = path.getNumberOfEdges();
         
@@ -208,28 +210,22 @@ public class MainApplication extends Application implements LocationListener, On
 			if (appListener != null) {
 				appListener.onLocationChanged(lat, lon, bearing);
 				if (guide != null) {
-	                Locator locator = this.guide.locate(lat, lon);
-	                appListener.onLocate(locator);
-	                if (locator.getJitterMeters() < 50) {
+					SdLocation loc = SdLocation.snap(path, lat, lon);
+	                appListener.onLocate(loc);
+	                if (loc.getJitter() < 50) {
 	                	if (mediaPlayer.isPlaying()) {
 	                		mediaPlayer.pause();
 	                	}
 	                	
 	                	nJitters = 0;
 	                    // alarm range
-	                    int ms = locator.getMeterStone();
-	                    int kmh = locator.getKmh();
-	                    SdAdvice adv = guide.lookAhead(ms, kmh);
-	                    if (adv != null) {
-	                    	String msg = adv.getMessageText();
-	                    	if (msg.contains("Ziel") || msg.contains("Target")) {
-	                    		speak("[signal]", false);
-	                    		speak(msg, false);
-	                    	} else {
-	                    		speak(adv.getMessageText(), true);
+	                    int ms = loc.getMeter();
+	                    int kmh = 50; // TODO estimate speed
+	                    SdMessage[] msgs = guide.lookAhead(ms, kmh);
+	                    if (msgs != null) {
+	                    	for (int i = 0; i < msgs.length; i++) {
+	                    		speak(msgs[i].getMessage(), false);
 	                    	}
-	                    } else if (guide.getSilence() > 30) {
-	                    	mpPlay(); 
 	                    }
 	                    
 	                } else {

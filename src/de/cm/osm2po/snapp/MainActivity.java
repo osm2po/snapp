@@ -1,8 +1,8 @@
 package de.cm.osm2po.snapp;
 
-import static de.cm.osm2po.sd.guide.SdMessage.ERR_POINT_FIND;
-import static de.cm.osm2po.sd.guide.SdMessage.ERR_ROUTE_CALC;
-import static de.cm.osm2po.sd.guide.SdMessage.ERR_ROUTE_LOST;
+import static de.cm.osm2po.sd.guide.SdMessage.MSG_ERR_POINT_FIND;
+import static de.cm.osm2po.sd.guide.SdMessage.MSG_ERR_ROUTE_CALC;
+import static de.cm.osm2po.sd.guide.SdMessage.MSG_ERR_ROUTE_LOST;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toLat;
 import static de.cm.osm2po.sd.routing.SdGeoUtils.toLon;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;
@@ -42,7 +42,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import de.cm.osm2po.sd.guide.SdHumbleGuide.Locator;
+import de.cm.osm2po.sd.guide.SdLocation;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -186,8 +186,8 @@ implements MarkerSelectListener, AppListener {
 	}
 	
 	@Override
-	public void onLocate(Locator loc) {
-		int kmh = loc.getKmh();
+	public void onLocate(SdLocation loc) {
+		int kmh = 50; // TODO handle speed
 		if (kmh > 200) {
 			lblSpeed.setText("too fast");
 		} else if (kmh < 1) {
@@ -225,7 +225,7 @@ implements MarkerSelectListener, AppListener {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
 			markersLayer.moveMarker(markerType, geoPoint);
 		} else {
-			app.speak(toast(ERR_POINT_FIND.getMessageText()), false);
+			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()), false);
 		}
 		
 		route(0);
@@ -239,7 +239,7 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					app.speak(toast(ERR_ROUTE_CALC.getMessageText()), false);
+					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()), false);
 				}
 			});
 		}
@@ -263,7 +263,7 @@ implements MarkerSelectListener, AppListener {
 
 	@Override
 	public void onRouteLost(long[] jitterCoords) {
-		app.speak(ERR_ROUTE_LOST.getMessageText(), false);
+		app.speak(MSG_ERR_ROUTE_LOST.getMessage(), false);
 		int n = jitterCoords.length;
 		long c =  jitterCoords[n-1]; // last jitter is new Source-TouchPoint
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
