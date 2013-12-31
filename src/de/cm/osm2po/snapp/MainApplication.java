@@ -6,6 +6,7 @@ import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +28,9 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
 import de.cm.osm2po.sd.guide.SdEvent;
+import de.cm.osm2po.sd.guide.SdForecast;
 import de.cm.osm2po.sd.guide.SdGuide;
 import de.cm.osm2po.sd.guide.SdLocation;
 import de.cm.osm2po.sd.guide.SdMessage;
@@ -37,7 +40,7 @@ import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
-public class MainApplication extends Application implements LocationListener, OnInitListener, OnCompletionListener {
+public class MainApplication extends Application implements LocationListener, OnInitListener, OnCompletionListener, OnUtteranceCompletedListener {
 
 	private LocationManager gps;
 	private TextToSpeech tts;
@@ -80,6 +83,7 @@ public class MainApplication extends Application implements LocationListener, On
     	}
 
     	tts = new TextToSpeech(this, this);
+    	tts.setOnUtteranceCompletedListener(this);
     	ttsTrackSet = registerTracks();
     	
     	mediaPlayer = MediaPlayer.create(this, R.raw.silence);
@@ -150,7 +154,7 @@ public class MainApplication extends Application implements LocationListener, On
     		final boolean bikeMode, final long dirHint) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-		speak(MSG_INF_ROUTE_CALC.getMessage());
+		speak(MSG_INF_ROUTE_CALC.getMessage(), null);
 
     	routingThread = new Thread(new Runnable() {
 			@Override
@@ -179,7 +183,7 @@ public class MainApplication extends Application implements LocationListener, On
 		}
 
 		path = router.findPath(tpSource, tpTarget, dirHint);
-		guide = (null == path) ? null : new SdGuide(SdEvent.create(path));
+		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
 		
 		return createGeometry();
     }
@@ -240,18 +244,19 @@ public class MainApplication extends Application implements LocationListener, On
 	                	
 	                	nJitters = 0;
 
-	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), true);
+	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter());
 	                    if (msgs != null) {
 	                    	if (tts.isSpeaking()) tts.stop();
-	                    	guide.resetTrace();
 
-	                    	for (int i = 0; i < msgs.length; i++) {
+	                    	int nMsgs = msgs.length;
+	                    	for (int i = 0; i < nMsgs; i++) {
 	                    		String key = msgs[i].getKey();
 	                    		String msg = msgs[i].getMessage();
+	                    		String utteranceId = i == nMsgs-1 ? "[EOS]" : null;
 	                    		if (ttsTrackSet.contains(key)) { 
-	                    			speak(key);
+	                    			speak(key, utteranceId);
 	                    		} else {
-	                    			speak(msg);
+	                    			speak(msg, utteranceId);
 	                    		}
 	                    	}
 	                    }
@@ -269,7 +274,7 @@ public class MainApplication extends Application implements LocationListener, On
 
     	} catch (Throwable t) {
     		if (tts.isSpeaking()) tts.stop();
-    		speak("Error " + t.getMessage());
+    		speak("Error " + t.getMessage(), null);
 		} finally {
 			isOnGpsBusy = false;
 		}
@@ -308,16 +313,31 @@ public class MainApplication extends Application implements LocationListener, On
 		return this.quiet;
 	}
 	
-	public void speak(String msg) {
+	public void speak(String msg, String utteranceId) {
 		if (this.quiet) return;
 		mpPause();
-		tts.speak(msg, QUEUE_ADD, null);
+		
+		HashMap<String, String> ttsAlarmMap = null;
+		if (utteranceId != null) {
+			ttsAlarmMap = new HashMap<String, String>();
+			ttsAlarmMap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
+		}
+		
+		tts.speak(msg, QUEUE_ADD, ttsAlarmMap);
 	}
 	
 	@Override
 	public void onInit(int status) {
 	}
 
+
+	@Override
+	public void onUtteranceCompleted(String utteranceId) {
+		if ("[EOS]".equals(utteranceId)) {
+        	guide.resetPrioTrace();
+		}
+	}
+	
 	/***************************** MediaPlayer *****************************/
 	
 	private void mpPause() {

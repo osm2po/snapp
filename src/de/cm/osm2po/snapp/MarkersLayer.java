@@ -73,8 +73,12 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	@Override
 	public boolean onLongPress(GeoPoint geoPoint, MapView mapView) {
 		moveMarker(TOUCH_MARKER, geoPoint);
-		markerSelectDialog.show(activity.getFragmentManager(), "dlg_marker");
+		showMarkerSelectDialog();
 		return true;
+	}
+	
+	public void showMarkerSelectDialog() {
+		markerSelectDialog.show(activity.getFragmentManager(), "dlg_marker");
 	}
 
 	@Override

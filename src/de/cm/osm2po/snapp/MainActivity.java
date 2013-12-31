@@ -187,14 +187,7 @@ implements MarkerSelectListener, AppListener {
 	
 	@Override
 	public void onLocate(SdLocation loc) {
-		int kmh = app.getKmh();
-		if (kmh > 200) {
-			lblSpeed.setText("too fast");
-		} else if (kmh < 1) {
-			lblSpeed.setText("too slow");
-		} else {
-			lblSpeed.setText(kmh + " km/h");
-		}
+		lblSpeed.setText(app.getKmh() + " km/h");
 	}
 
 	@Override
@@ -225,7 +218,7 @@ implements MarkerSelectListener, AppListener {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
 			markersLayer.moveMarker(markerType, geoPoint);
 		} else {
-			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()));
+			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()), null);
 		}
 		
 		route(0);
@@ -239,7 +232,7 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()));
+					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()), null);
 				}
 			});
 		}
@@ -263,7 +256,7 @@ implements MarkerSelectListener, AppListener {
 
 	@Override
 	public void onRouteLost(long[] jitterCoords) {
-		app.speak(MSG_ERR_ROUTE_LOST.getMessage());
+		app.speak(MSG_ERR_ROUTE_LOST.getMessage(), null);
 		int n = jitterCoords.length;
 		long c =  jitterCoords[n-1]; // last jitter is new Source-TouchPoint
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
@@ -385,7 +378,8 @@ implements MarkerSelectListener, AppListener {
 			if (gpAddress != null) {
 				mapView.setCenter(gpAddress);
 				mapView.getController().setZoom(14);
-				app.onGps(gpAddress.getLatitude(), gpAddress.getLongitude(), 0);
+				markersLayer.moveMarker(TOUCH_MARKER, gpAddress);
+				markersLayer.showMarkerSelectDialog();
 				return true;
 			} else {
 				toast("Address not found");
