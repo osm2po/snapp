@@ -218,7 +218,7 @@ implements MarkerSelectListener, AppListener {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
 			markersLayer.moveMarker(markerType, geoPoint);
 		} else {
-			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()), null);
+			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()));
 		}
 		
 		route(0);
@@ -232,7 +232,7 @@ implements MarkerSelectListener, AppListener {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()), null);
+					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()));
 				}
 			});
 		}
@@ -256,7 +256,7 @@ implements MarkerSelectListener, AppListener {
 
 	@Override
 	public void onRouteLost(long[] jitterCoords) {
-		app.speak(MSG_ERR_ROUTE_LOST.getMessage(), null);
+		app.speak(MSG_ERR_ROUTE_LOST.getMessage());
 		int n = jitterCoords.length;
 		long c =  jitterCoords[n-1]; // last jitter is new Source-TouchPoint
 		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));

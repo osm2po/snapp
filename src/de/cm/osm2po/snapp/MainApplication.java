@@ -7,9 +7,7 @@ import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.mapsforge.core.GeoPoint;
 
@@ -44,7 +42,6 @@ public class MainApplication extends Application implements LocationListener, On
 
 	private LocationManager gps;
 	private TextToSpeech tts;
-	private Set<String> ttsTrackSet;
 	private SdGraph graph;
 	private SdGuide guide;
 	private SdPath path;
@@ -84,7 +81,7 @@ public class MainApplication extends Application implements LocationListener, On
 
     	tts = new TextToSpeech(this, this);
     	tts.setOnUtteranceCompletedListener(this);
-    	ttsTrackSet = registerTracks();
+    	registerTracks();
     	
     	mediaPlayer = MediaPlayer.create(this, R.raw.silence);
     	mediaPlayer.setOnCompletionListener(this);
@@ -95,18 +92,18 @@ public class MainApplication extends Application implements LocationListener, On
         jitters = new long[10];
     }
     
-    private Set<String> registerTracks() {
-    	Set<String> trackSet = new HashSet<String>();
+    private void registerTracks() {
     	File dir = new File(getSdDir(), "tracks");
-    	for (String key : SdMessageResource.getKeySet()) {
+    	for (SdMessageResource msg : SdMessageResource.values()) {
+    		String key = msg.getKey();
+    		if (null == key) continue;
+    		
     		String audioFileName = key.replace('.', '_') + ".mp3";
     		File audioFile = new File(dir, audioFileName);
     		if (audioFile.exists()) {
-    			tts.addSpeech(key, audioFile.getAbsolutePath());
-    			trackSet.add(key);
+    			tts.addSpeech(msg.getMessage(), audioFile.getAbsolutePath());
     		}
     	}
-    	return trackSet;
     }
     
     public File getMapFile() {return mapFile;}
@@ -154,7 +151,7 @@ public class MainApplication extends Application implements LocationListener, On
     		final boolean bikeMode, final long dirHint) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
-		speak(MSG_INF_ROUTE_CALC.getMessage(), null);
+		speak(MSG_INF_ROUTE_CALC.getMessage());
 
     	routingThread = new Thread(new Runnable() {
 			@Override
@@ -238,27 +235,15 @@ public class MainApplication extends Application implements LocationListener, On
 					SdLocation loc = SdLocation.snap(path, lat, lon);
 	                appListener.onLocate(loc);
 	                if (loc.getJitter() < 50) {
-	                	if (mediaPlayer.isPlaying()) {
-	                		mediaPlayer.pause();
-	                	}
-	                	
 	                	nJitters = 0;
+
+	                	if (mediaPlayer.isPlaying()) mediaPlayer.pause();
 
 	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter());
 	                    if (msgs != null) {
 	                    	if (tts.isSpeaking()) tts.stop();
-
-	                    	int nMsgs = msgs.length;
-	                    	for (int i = 0; i < nMsgs; i++) {
-	                    		String key = msgs[i].getKey();
-	                    		String msg = msgs[i].getMessage();
-	                    		String utteranceId = i == nMsgs-1 ? "[EOS]" : null;
-	                    		if (ttsTrackSet.contains(key)) { 
-	                    			speak(key, utteranceId);
-	                    		} else {
-	                    			speak(msg, utteranceId);
-	                    		}
-	                    	}
+	                    	for (SdMessage msg : msgs) speak(msg.getMessage());
+	                    	speak("#stop");
 	                    }
 	                    
 	                } else {
@@ -274,7 +259,8 @@ public class MainApplication extends Application implements LocationListener, On
 
     	} catch (Throwable t) {
     		if (tts.isSpeaking()) tts.stop();
-    		speak("Error " + t.getMessage(), null);
+    		speak("Error " + t.getMessage());
+    		
 		} finally {
 			isOnGpsBusy = false;
 		}
@@ -313,14 +299,16 @@ public class MainApplication extends Application implements LocationListener, On
 		return this.quiet;
 	}
 	
-	public void speak(String msg, String utteranceId) {
+	public void speak(String msg) {
 		if (this.quiet) return;
+		if (null == msg) return;
+		
 		mpPause();
 		
 		HashMap<String, String> ttsAlarmMap = null;
-		if (utteranceId != null) {
+		if (msg.startsWith("#")) {
 			ttsAlarmMap = new HashMap<String, String>();
-			ttsAlarmMap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
+			ttsAlarmMap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, msg);
 		}
 		
 		tts.speak(msg, QUEUE_ADD, ttsAlarmMap);
@@ -333,9 +321,7 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onUtteranceCompleted(String utteranceId) {
-		if ("[EOS]".equals(utteranceId)) {
-        	guide.resetPrioTrace();
-		}
+    	guide.resetPrioTrace();
 	}
 	
 	/***************************** MediaPlayer *****************************/
