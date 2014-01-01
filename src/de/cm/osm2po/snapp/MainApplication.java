@@ -309,6 +309,7 @@ public class MainApplication extends Application implements LocationListener, On
 		if (msg.startsWith("#")) {
 			ttsAlarmMap = new HashMap<String, String>();
 			ttsAlarmMap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, msg);
+			msg = ""; // no message but utterance signal
 		}
 		
 		tts.speak(msg, QUEUE_ADD, ttsAlarmMap);
