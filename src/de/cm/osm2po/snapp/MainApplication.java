@@ -53,7 +53,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private boolean gpsListening;
 	private long[] jitters; // Coords, nano-long coded
 	private int nJitters;
-	private MediaPlayer mediaPlayer;
+	private MediaPlayer mpSilence;
 	private int mpNextStart;
 	private boolean quiet;
 	
@@ -83,8 +83,8 @@ public class MainApplication extends Application implements LocationListener, On
     	tts.setOnUtteranceCompletedListener(this);
     	registerTracks();
     	
-    	mediaPlayer = MediaPlayer.create(this, R.raw.silence);
-    	mediaPlayer.setOnCompletionListener(this);
+    	mpSilence = MediaPlayer.create(this, R.raw.silence);
+    	mpSilence.setOnCompletionListener(this);
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
         mapFile = new File(getSdDir(), "snapp.map");
@@ -113,7 +113,7 @@ public class MainApplication extends Application implements LocationListener, On
     public void onTerminate() {
     	super.onTerminate();
     	tts.shutdown();
-    	mediaPlayer.release();
+    	mpSilence.release();
     	graph.close();
     }
     
@@ -237,13 +237,15 @@ public class MainApplication extends Application implements LocationListener, On
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
-	                	if (mediaPlayer.isPlaying()) mediaPlayer.pause();
+	                	if (mpSilence.isPlaying()) mpSilence.pause();
 
 	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter());
 	                    if (msgs != null) {
 	                    	if (tts.isSpeaking()) tts.stop();
 	                    	for (SdMessage msg : msgs) speak(msg.getMessage());
 	                    	speak("#stop");
+	                    } else {
+	                    	if (guide.getSilence() > 1000) mpPlaySilence();
 	                    }
 	                    
 	                } else {
@@ -291,7 +293,7 @@ public class MainApplication extends Application implements LocationListener, On
 		this.quiet = quiet;
 		if (quiet) {
 			if (tts.isSpeaking()) tts.stop();
-			if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+			if (mpSilence.isPlaying()) mpSilence.stop();
 		}
 	}
 	
@@ -328,16 +330,16 @@ public class MainApplication extends Application implements LocationListener, On
 	/***************************** MediaPlayer *****************************/
 	
 	private void mpPause() {
-		if (mediaPlayer.isPlaying()) {
-			mediaPlayer.pause();
+		if (mpSilence.isPlaying()) {
+			mpSilence.pause();
 		}
 	}
 	
-	private void mpPlay() {
+	private void mpPlaySilence() {
 		if (this.quiet) return;
 		int ts = (int) (System.currentTimeMillis() / 1000);
-		if (mpNextStart < ts && !mediaPlayer.isPlaying() && !tts.isSpeaking()) {
-			mediaPlayer.start();
+		if (mpNextStart < ts && !mpSilence.isPlaying() && !tts.isSpeaking()) {
+			mpSilence.start();
 		}
 	}
 	
