@@ -27,6 +27,7 @@ import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
+import android.telephony.TelephonyManager;
 import de.cm.osm2po.sd.guide.SdEvent;
 import de.cm.osm2po.sd.guide.SdForecast;
 import de.cm.osm2po.sd.guide.SdGuide;
@@ -56,6 +57,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private MediaPlayer mpSilence;
 	private int mpNextStart;
 	private boolean quiet;
+	private int phoneId;
 	
 	private double lastLat;
 	private double lastLon;
@@ -70,6 +72,10 @@ public class MainApplication extends Application implements LocationListener, On
     @Override
     public void onCreate() {
     	super.onCreate();
+    	
+    	TelephonyManager tm = (TelephonyManager) getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
+        String deviceId = tm.getDeviceId();
+        phoneId = Math.abs(deviceId.hashCode());
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
