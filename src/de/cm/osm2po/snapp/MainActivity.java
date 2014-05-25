@@ -3,8 +3,6 @@ package de.cm.osm2po.snapp;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_POINT_FIND;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_CALC;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_LOST;
-import static de.cm.osm2po.sd.routing.SdGeoUtils.toLat;
-import static de.cm.osm2po.sd.routing.SdGeoUtils.toLon;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;
 import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
 import static de.cm.osm2po.snapp.MarkerType.HOME_MARKER;
@@ -79,7 +77,7 @@ implements MarkerSelectListener, AppListener {
 		
 		tglCar = (ToggleButton) findViewById(R.id.tglCar);
 		tglCar.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {route(0);}
+			public void onClick(View v) {route();}
 		});
 		
 		tglGps = (ToggleButton) findViewById(R.id.tglGps);
@@ -130,13 +128,12 @@ implements MarkerSelectListener, AppListener {
 
         app.setAppListener(this);
         
-        if (!app.isGuiding()) route(0);
+        if (!app.isGuiding()) route();
 	}
 
 	@Override
     protected void onDestroy() {
     	super.onDestroy();
-    	// FIXME handle running calculation
     	app.setAppListener(null); // UnChain
     	saveInstanceState();
     }
@@ -162,7 +159,7 @@ implements MarkerSelectListener, AppListener {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		if (item.getItemId() == R.id.menu_nav_home) {
-			GeoPoint gp1 = app.getLastPosition();
+			GeoPoint gp1 = app.getLastGpsPosition();
 			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
 			if (gp1 != null && gp2 != null) {
 				tpSource = null;
@@ -221,7 +218,7 @@ implements MarkerSelectListener, AppListener {
 			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()));
 		}
 		
-		route(0);
+		route();
 	}
 
 	@Override
@@ -239,13 +236,13 @@ implements MarkerSelectListener, AppListener {
 		progressDialog.dismiss();
 	}
 
-	private void route(long dirHint) {
+	private void route() {
 		if (app.isCalculatingRoute()) return;
 		if (tpSource != null && tpTarget != null) {
 			try {
 				progressDialog.show();
 				lblSpeed.setText(null);
-				app.route(tpSource, tpTarget, !tglCar.isChecked(), dirHint);
+				app.route(tpSource, tpTarget, !tglCar.isChecked());
 			} catch (Throwable t) {
 				toast("Error\n" + t.getMessage());
 			}
@@ -255,16 +252,10 @@ implements MarkerSelectListener, AppListener {
 	}
 
 	@Override
-	public void onRouteLost(long[] jitterCoords) {
+	public void onRouteLost() {
 		app.speak(MSG_ERR_ROUTE_LOST.getMessage());
-		int n = jitterCoords.length;
-		long c =  jitterCoords[n-1]; // last jitter is new Source-TouchPoint
-		tpSource = SdTouchPoint.create(app.getGraph(), (float)toLat(c), (float)toLon(c));
-		if (tpSource != null) {
-			markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(toLat(c), toLon(c)));
-			markersLayer.moveMarker(SOURCE_MARKER, new GeoPoint(tpSource.getLat(), tpSource.getLon()));
-		}
-		route(jitterCoords[n-2]); // last but one jitter as direction hint);
+		markersLayer.moveMarker(TOUCH_MARKER, app.getLastGpsPosition());
+		onMarkerSelected(SOURCE_MARKER);
 	}
 
 	

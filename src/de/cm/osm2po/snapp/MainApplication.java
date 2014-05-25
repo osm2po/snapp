@@ -2,11 +2,9 @@ package de.cm.osm2po.snapp;
 
 import static android.speech.tts.TextToSpeech.QUEUE_ADD;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_INF_ROUTE_CALC;
-import static de.cm.osm2po.sd.routing.SdGeoUtils.toCoord;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import org.mapsforge.core.GeoPoint;
@@ -19,15 +17,11 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
-import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
-import android.telephony.TelephonyManager;
 import de.cm.osm2po.sd.guide.SdEvent;
 import de.cm.osm2po.sd.guide.SdForecast;
 import de.cm.osm2po.sd.guide.SdGuide;
@@ -39,7 +33,7 @@ import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
-public class MainApplication extends Application implements LocationListener, OnInitListener, OnCompletionListener, OnUtteranceCompletedListener {
+public class MainApplication extends Application implements LocationListener, OnInitListener {
 
 	private LocationManager gps;
 	private TextToSpeech tts;
@@ -52,12 +46,8 @@ public class MainApplication extends Application implements LocationListener, On
 	private SdRouter router;
 	private boolean bikeMode;
 	private boolean gpsListening;
-	private long[] jitters; // Coords, nano-long coded
 	private int nJitters;
-	private MediaPlayer mpSilence;
-	private int mpNextStart;
 	private boolean quiet;
-	private int phoneId;
 	
 	private double lastLat;
 	private double lastLon;
@@ -72,10 +62,6 @@ public class MainApplication extends Application implements LocationListener, On
     @Override
     public void onCreate() {
     	super.onCreate();
-    	
-    	TelephonyManager tm = (TelephonyManager) getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
-        String deviceId = tm.getDeviceId();
-        phoneId = Math.abs(deviceId.hashCode());
 
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
@@ -86,16 +72,10 @@ public class MainApplication extends Application implements LocationListener, On
     	}
 
     	tts = new TextToSpeech(this, this);
-    	tts.setOnUtteranceCompletedListener(this);
     	registerTracks();
-    	
-    	mpSilence = MediaPlayer.create(this, R.raw.silence);
-    	mpSilence.setOnCompletionListener(this);
     	
         graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
         mapFile = new File(getSdDir(), "snapp.map");
-        
-        jitters = new long[10];
     }
     
     private void registerTracks() {
@@ -119,7 +99,6 @@ public class MainApplication extends Application implements LocationListener, On
     public void onTerminate() {
     	super.onTerminate();
     	tts.shutdown();
-    	mpSilence.release();
     	graph.close();
     }
     
@@ -154,7 +133,7 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget,
-    		final boolean bikeMode, final long dirHint) throws IllegalStateException {
+    		final boolean bikeMode) throws IllegalStateException {
     	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
 
 		speak(MSG_INF_ROUTE_CALC.getMessage());
@@ -163,7 +142,7 @@ public class MainApplication extends Application implements LocationListener, On
 			@Override
 			public void run() {
 				try {
-					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode, dirHint);
+					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
 					}
@@ -178,14 +157,14 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget,
-    		boolean bikeMode, long dirHint) {
+    		boolean bikeMode) {
 		File cacheFile = new File(getCacheDir(), "osm2po.sd");
 		if (null == router || bikeMode != this.bikeMode) {
 			this.bikeMode = bikeMode;
 			router = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
 		}
 
-		path = router.findPath(tpSource, tpTarget, dirHint);
+		path = router.findPath(tpSource, tpTarget);
 		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
 		
 		return createGeometry();
@@ -218,7 +197,7 @@ public class MainApplication extends Application implements LocationListener, On
     
     /******************************** GPS *********************************/
     
-    public GeoPoint getLastPosition() {
+    public GeoPoint getLastGpsPosition() {
     	return new GeoPoint(lastLat, lastLon);
     }
     
@@ -243,24 +222,17 @@ public class MainApplication extends Application implements LocationListener, On
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
-	                	if (mpSilence.isPlaying()) mpSilence.pause();
-
-	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter());
+	                	boolean immediate = tts.isSpeaking();
+	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), immediate);
 	                    if (msgs != null) {
-	                    	if (tts.isSpeaking()) tts.stop();
 	                    	for (SdMessage msg : msgs) speak(msg.getMessage());
-	                    	speak("#stop");
-	                    } else {
-	                    	if (guide.getSilence() > 1000) mpPlaySilence();
 	                    }
 	                    
 	                } else {
-	                	if (nJitters == jitters.length) {
-	                		nJitters = 0;
-	                		this.appListener.onRouteLost(jitters);
-	                	} else {
-	                		jitters[nJitters++] = toCoord(lat, lon);
-	                	}
+                		if (++nJitters > 5) {
+                			this.appListener.onRouteLost();
+                			nJitters = 0;
+                		}
 	                }
 				}
 			}
@@ -299,7 +271,6 @@ public class MainApplication extends Application implements LocationListener, On
 		this.quiet = quiet;
 		if (quiet) {
 			if (tts.isSpeaking()) tts.stop();
-			if (mpSilence.isPlaying()) mpSilence.stop();
 		}
 	}
 	
@@ -311,16 +282,7 @@ public class MainApplication extends Application implements LocationListener, On
 		if (this.quiet) return;
 		if (null == msg) return;
 		
-		mpPause();
-		
-		HashMap<String, String> ttsAlarmMap = null;
-		if (msg.startsWith("#")) {
-			ttsAlarmMap = new HashMap<String, String>();
-			ttsAlarmMap.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, msg);
-			msg = ""; // no message but utterance signal
-		}
-		
-		tts.speak(msg, QUEUE_ADD, ttsAlarmMap);
+		tts.speak(msg, QUEUE_ADD, null);
 	}
 	
 	@Override
@@ -328,32 +290,6 @@ public class MainApplication extends Application implements LocationListener, On
 	}
 
 
-	@Override
-	public void onUtteranceCompleted(String utteranceId) {
-    	guide.resetPrioTrace();
-	}
-	
-	/***************************** MediaPlayer *****************************/
-	
-	private void mpPause() {
-		if (mpSilence.isPlaying()) {
-			mpSilence.pause();
-		}
-	}
-	
-	private void mpPlaySilence() {
-		if (this.quiet) return;
-		int ts = (int) (System.currentTimeMillis() / 1000);
-		if (mpNextStart < ts && !mpSilence.isPlaying() && !tts.isSpeaking()) {
-			mpSilence.start();
-		}
-	}
-	
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		mpNextStart = (int) (System.currentTimeMillis() / 1000) + 300; // in 5 Min.
-	}
-	
 	/************************** Address-Finder  ***************************/
 	
 	public GeoPoint findAddress(String address) throws Exception {
