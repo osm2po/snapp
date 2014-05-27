@@ -4,11 +4,12 @@ import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_POINT_FIND;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_CALC;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_LOST;
 import static de.cm.osm2po.snapp.MainApplication.getSdDir;
-import static de.cm.osm2po.snapp.MarkerType.GPS_MARKER;
-import static de.cm.osm2po.snapp.MarkerType.HOME_MARKER;
-import static de.cm.osm2po.snapp.MarkerType.SOURCE_MARKER;
-import static de.cm.osm2po.snapp.MarkerType.TARGET_MARKER;
-import static de.cm.osm2po.snapp.MarkerType.TOUCH_MARKER;
+import static de.cm.osm2po.snapp.Marker.GPS_MARKER;
+import static de.cm.osm2po.snapp.Marker.HOME_MARKER;
+import static de.cm.osm2po.snapp.Marker.POS_MARKER;
+import static de.cm.osm2po.snapp.Marker.SOURCE_MARKER;
+import static de.cm.osm2po.snapp.Marker.TARGET_MARKER;
+import static de.cm.osm2po.snapp.Marker.TOUCH_MARKER;
 import static de.cm.osm2po.snapp.Utils.readLongs;
 import static de.cm.osm2po.snapp.Utils.readString;
 import static de.cm.osm2po.snapp.Utils.writeLongs;
@@ -40,7 +41,6 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import de.cm.osm2po.sd.guide.SdLocation;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
@@ -50,9 +50,10 @@ implements MarkerSelectListener, AppListener {
 	private MarkersLayer markersLayer;
 	private SdTouchPoint tpSource, tpTarget;
 	private long[] geometry;
-	private ToggleButton tglCar;
-	private ToggleButton tglGps;
-	private ToggleButton tglTone;
+	private ToggleButton tglCarOrBike;
+	private ToggleButton tglNaviOrEdit;
+	private ToggleButton tglPanOrHold;
+	private ToggleButton tglToneOrQuiet;
 	private TextView lblSpeed;
 	private EditText txtAddress;
 	private MainApplication app;
@@ -61,7 +62,7 @@ implements MarkerSelectListener, AppListener {
 	private ProgressDialog progressDialog;
 	
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
-	private static final int STATE_FILE_VERSION = 2;
+	private static final int STATE_FILE_VERSION = 3;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -73,24 +74,31 @@ implements MarkerSelectListener, AppListener {
 		progressDialog.setMessage("Calculating Route...");
 
 		app = (MainApplication) this.getApplication();
-		if (app.isCalculatingRoute()) progressDialog.show();
+		if (app.isRouterBusy()) progressDialog.show();
 		
-		tglCar = (ToggleButton) findViewById(R.id.tglCar);
-		tglCar.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {route();}
+		tglCarOrBike = (ToggleButton) findViewById(R.id.tglCarOrBike);
+		tglCarOrBike.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {app.setBikeMode(!tglCarOrBike.isChecked()); route();}
 		});
 		
-		tglGps = (ToggleButton) findViewById(R.id.tglGps);
-		tglGps.setOnClickListener(new OnClickListener() {
+		tglNaviOrEdit = (ToggleButton) findViewById(R.id.tglNaviOrEdit);
+		tglNaviOrEdit.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				app.setGpsListening(tglGps.isChecked());
+				if (tglNaviOrEdit.isChecked()) app.startGps();
 			}
 		});
 
-		tglTone = (ToggleButton) findViewById(R.id.tglTone);
-		tglTone.setOnClickListener(new OnClickListener() {
+		tglToneOrQuiet = (ToggleButton) findViewById(R.id.tglToneOrQuiet);
+		tglToneOrQuiet.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				app.setQuiet(!tglTone.isChecked());
+				app.setQuietMode(!tglToneOrQuiet.isChecked());
+			}
+		});
+
+		tglPanOrHold = (ToggleButton) findViewById(R.id.tglPanOrHold);
+		tglPanOrHold.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				app.setAutoPanningMode(tglPanOrHold.isChecked());
 			}
 		});
 		
@@ -146,8 +154,10 @@ implements MarkerSelectListener, AppListener {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		tglGps.setChecked(app.isGpsListening() && app.isGpsAvailable());
-		tglTone.setChecked(!app.isQuiet());
+		tglCarOrBike.setChecked(!app.isBikeMode());
+		tglNaviOrEdit.setChecked(app.isNaviMode());
+		tglPanOrHold.setChecked(app.isAutoPanningMode());
+		tglToneOrQuiet.setChecked(!app.isQuietMode());
 	}
 	
 	@Override
@@ -164,9 +174,9 @@ implements MarkerSelectListener, AppListener {
 			if (gp1 != null && gp2 != null) {
 				tpSource = null;
 				tpTarget = null;
-				markersLayer.moveMarker(MarkerType.TOUCH_MARKER, gp1);
+				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp1);
 				onMarkerSelected(SOURCE_MARKER);
-				markersLayer.moveMarker(MarkerType.TOUCH_MARKER, gp2);
+				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp2);
 				onMarkerSelected(TARGET_MARKER);
 			}
 			
@@ -175,26 +185,30 @@ implements MarkerSelectListener, AppListener {
 	}
 	
 	@Override
-	public void onLocationChanged(double lat, double lon, float bearing) {
+	public void onGpsChanged(double lat, double lon, float bearing) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		markersLayer.moveMarker(GPS_MARKER, geoPoint, bearing);
-		if (nGpsCalls == 0) mapView.setCenter(geoPoint);
-		if (++nGpsCalls > 10) nGpsCalls = 0;
+		if (app.isAutoPanningMode()) {
+			if (nGpsCalls == 0) mapView.setCenter(geoPoint);
+			if (++nGpsCalls > 10) nGpsCalls = 0;
+		}
 	}
 	
 	@Override
-	public void onLocate(SdLocation loc) {
+	public void onPositionChanged(double lat, double lon, float bearing) {
+		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		lblSpeed.setText(app.getKmh() + " km/h");
+		markersLayer.moveMarker(POS_MARKER, geoPoint, bearing);
 	}
 
 	@Override
-	public void onMarkerSelected(MarkerType markerType) {
+	public void onMarkerSelected(Marker markerType) {
 		GeoPoint geoPoint = markersLayer.getLastTouchPosition();
 		double lat = geoPoint.getLatitude();
 		double lon = geoPoint.getLongitude();
 		
 		if (GPS_MARKER == markerType) {
-			app.onGps(lat, lon, 0); // Simulation
+			app.navigate(lat, lon, 0); // Simulation
 			return;
 		}
 		
@@ -235,14 +249,14 @@ implements MarkerSelectListener, AppListener {
 		}
 		progressDialog.dismiss();
 	}
-
+	
 	private void route() {
-		if (app.isCalculatingRoute()) return;
+		if (app.isRouterBusy()) return;
 		if (tpSource != null && tpTarget != null) {
 			try {
 				progressDialog.show();
 				lblSpeed.setText(null);
-				app.route(tpSource, tpTarget, !tglCar.isChecked());
+				app.route(tpSource, tpTarget);
 			} catch (Throwable t) {
 				toast("Error\n" + t.getMessage());
 			}
@@ -273,7 +287,11 @@ implements MarkerSelectListener, AppListener {
 			OutputStream os = new FileOutputStream(STATE_FILE);
 			DataOutputStream dos = new DataOutputStream(os);
 			dos.writeInt(STATE_FILE_VERSION);
-			dos.writeBoolean(tglCar.isChecked());
+			
+			dos.writeBoolean(tglCarOrBike.isChecked());
+			dos.writeBoolean(tglNaviOrEdit.isChecked());
+			dos.writeBoolean(tglPanOrHold.isChecked());
+			dos.writeBoolean(tglToneOrQuiet.isChecked());
 			
 			dos.writeInt(mapView.getMapPosition().getZoomLevel());
 			GeoPoint center = mapView.getMapPosition().getMapCenter(); 
@@ -308,10 +326,19 @@ implements MarkerSelectListener, AppListener {
 			int saveInstanceVersion = dis.readInt();
 			if (saveInstanceVersion != STATE_FILE_VERSION) {
 				toast("Wrong SaveInstance-Version");
+				is.close();
 				return;
 			}
 			
-			tglCar.setChecked(dis.readBoolean());
+			tglCarOrBike.setChecked(dis.readBoolean());
+			tglNaviOrEdit.setChecked(dis.readBoolean());
+			tglPanOrHold.setChecked(dis.readBoolean());
+			tglToneOrQuiet.setChecked(dis.readBoolean());
+
+			app.setBikeMode(!tglCarOrBike.isChecked());
+			app.setNaviMode(tglNaviOrEdit.isChecked());
+			app.setAutoPanningMode(tglPanOrHold.isChecked());
+			app.setQuietMode(!tglToneOrQuiet.isChecked());
 			
 			int zoomLevel = dis.readInt();
 			mapView.getController().setZoom(zoomLevel);
@@ -353,8 +380,7 @@ implements MarkerSelectListener, AppListener {
 	    	
 	    	geometry = readLongs(dis);
 	    	
-	    	if (app.isGuiding()) 
-	    		routesLayer.drawRoute(geometry); // null safe
+	    	if (app.isGuiding()) routesLayer.drawRoute(geometry); // null safe
 			
 			is.close();
 			
@@ -380,5 +406,6 @@ implements MarkerSelectListener, AppListener {
 		}
 		return false;
 	}
+
 
 }

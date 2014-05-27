@@ -13,39 +13,51 @@
         android:padding="@dimen/padding_none" >
 	        
 	        <ToggleButton
-	            android:id="@+id/tglGps"
+	            android:id="@+id/tglNaviOrEdit"
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
 	            android:minHeight="12dp"
 	            android:minWidth="36dp"
 	            android:padding="@dimen/padding_none"
 	            android:textColor="@color/white"
-	            android:textOff="@string/tgl_gps_sim"
-	            android:textOn="@string/tgl_gps_nav"
-	            android:textSize="@dimen/font_small" />
-	        
-	        <ToggleButton
-	            android:id="@+id/tglCar"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:minHeight="12dp"
-	            android:minWidth="36dp"
-	            android:padding="@dimen/padding_none"
-	            android:textColor="@color/white"
-	            android:textOn="@string/tgl_mode_car"
-	            android:textOff="@string/tgl_mode_bike"
+	            android:textOff="@string/tgl_edit"
+	            android:textOn="@string/tgl_navi"
 	            android:textSize="@dimen/font_small" />
 
 	        <ToggleButton
-	            android:id="@+id/tglTone"
+	            android:id="@+id/tglPanOrHold"
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
 	            android:minHeight="12dp"
 	            android:minWidth="36dp"
 	            android:padding="@dimen/padding_none"
 	            android:textColor="@color/white"
-	            android:textOff="@string/tgl_tone_off"
-	            android:textOn="@string/tgl_tone_on"
+	            android:textOff="@string/tgl_hold"
+	            android:textOn="@string/tgl_pan"
+	            android:textSize="@dimen/font_small" />
+	        	        	        
+	        <ToggleButton
+	            android:id="@+id/tglCarOrBike"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:minHeight="12dp"
+	            android:minWidth="36dp"
+	            android:padding="@dimen/padding_none"
+	            android:textColor="@color/white"
+	            android:textOn="@string/tgl_car"
+	            android:textOff="@string/tgl_bike"
+	            android:textSize="@dimen/font_small" />
+
+	        <ToggleButton
+	            android:id="@+id/tglToneOrQuiet"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:minHeight="12dp"
+	            android:minWidth="36dp"
+	            android:padding="@dimen/padding_none"
+	            android:textColor="@color/white"
+	            android:textOff="@string/tgl_quiet"
+	            android:textOn="@string/tgl_tone"
 	            android:textSize="@dimen/font_small" />
 	        
 	        <EditText

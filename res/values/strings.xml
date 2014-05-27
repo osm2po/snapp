@@ -8,13 +8,16 @@
     <string name="btn_target">Target</string>
     <string name="btn_route">Route</string>
     
-    <string name="tgl_mode_car">car</string>
-    <string name="tgl_mode_bike">bike</string>
+    <string name="tgl_car">car</string>
+    <string name="tgl_bike">bike</string>
     
-    <string name="tgl_gps_sim">simu</string>
-    <string name="tgl_gps_nav">navi</string>
+    <string name="tgl_edit">edit</string>
+    <string name="tgl_navi">navi</string>
     
-    <string name="tgl_tone_on">tone</string>
-    <string name="tgl_tone_off">quiet</string>
+    <string name="tgl_pan">pan</string>
+    <string name="tgl_hold">hold</string>
+    
+    <string name="tgl_tone">tone</string>
+    <string name="tgl_quiet">quiet</string>
     
 </resources>

@@ -1,6 +1,6 @@
 package de.cm.osm2po.snapp;
 
-import static de.cm.osm2po.snapp.MarkerType.TOUCH_MARKER;
+import static de.cm.osm2po.snapp.Marker.TOUCH_MARKER;
 
 import org.mapsforge.android.maps.MapView;
 import org.mapsforge.android.maps.overlay.ArrayItemizedOverlay;
@@ -24,11 +24,11 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 		this.activity = activity;
 		markerSelectDialog = new MarkerSelectDialog();
 		
-    	MarkerType[] mtes = MarkerType.values();
+    	Marker[] mtes = Marker.values();
     	int nMtes = mtes.length;
     	markers = new OverlayItem[nMtes];
     	for (int i = 0; i < nMtes; i++) {
-    		MarkerType mte = mtes[i];
+    		Marker mte = mtes[i];
     		Drawable drawable = activity.getResources().getDrawable(mte.getIconId());
     		if (mte.isBottomCenter()) {
     			ArrayItemizedOverlay.boundCenterBottom(drawable);
@@ -43,7 +43,7 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
     	}
 	}
 
-	public void moveMarker(MarkerType mte, GeoPoint geoPoint, float rotate) {
+	public void moveMarker(Marker mte, GeoPoint geoPoint, float rotate) {
 		OverlayItem overlayItem = markers[mte.getIndex()];
 		Drawable drawable = overlayItem.getMarker();
 		if (drawable instanceof RotatableBitmapDrawable) {
@@ -52,12 +52,12 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 		moveMarker(mte, geoPoint);
 	}
 	
-	public void moveMarker(MarkerType mte, GeoPoint geoPoint) {
+	public void moveMarker(Marker mte, GeoPoint geoPoint) {
 		markers[mte.getIndex()].setPoint(geoPoint);
 		requestRedraw();
 	}
 	
-	public GeoPoint getMarkerPosition(MarkerType mte) {
+	public GeoPoint getMarkerPosition(Marker mte) {
 		return markers[mte.getIndex()].getPoint();
 	}
 
@@ -82,7 +82,7 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 	}
 
 	@Override
-	public void onMarkerSelected(MarkerType mte) {
+	public void onMarkerSelected(Marker mte) {
 		if (selectMarkerListener != null) {
 			selectMarkerListener.onMarkerSelected(mte);
 		} else if (activity instanceof MarkerSelectListener) {

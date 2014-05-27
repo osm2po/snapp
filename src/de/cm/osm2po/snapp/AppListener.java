@@ -1,10 +1,8 @@
 package de.cm.osm2po.snapp;
 
-import de.cm.osm2po.sd.guide.SdLocation;
-
 public interface AppListener {
-	void onLocationChanged(double lat, double lon, float bearing);
-	void onLocate(SdLocation loc);
+	void onGpsChanged(double lat, double lon, float bearing);
+	void onPositionChanged(double lat, double lon, float bearing);
 	void onRouteChanged(long[] geometry);
 	void onRouteLost();
 }

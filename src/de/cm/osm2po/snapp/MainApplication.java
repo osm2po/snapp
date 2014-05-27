@@ -44,10 +44,12 @@ public class MainApplication extends Application implements LocationListener, On
 	private AppListener appListener; // there is only one
 	private Thread routingThread;
 	private SdRouter router;
-	private boolean bikeMode;
-	private boolean gpsListening;
 	private int nJitters;
-	private boolean quiet;
+
+	private boolean quietMode;
+	private boolean bikeMode;
+	private boolean autoPanningMode;
+	private boolean naviMode;
 	
 	private double lastLat;
 	private double lastLon;
@@ -106,9 +108,8 @@ public class MainApplication extends Application implements LocationListener, On
     	this.appListener = appListener;
     };
     
-    public void setGpsListening(boolean gpsListening) {
-    	this.gpsListening = gpsListening;
-    	if (!isGpsAvailable()) {
+    public void startGps() {
+    	if (!isGpsOn()) {
     		Intent gpsSettings = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
     		gpsSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     		startActivity(gpsSettings);    		
@@ -118,23 +119,45 @@ public class MainApplication extends Application implements LocationListener, On
     	}
     }
     
-    public boolean isGpsListening() {
-    	return gpsListening;
+    public boolean isGpsOn() {
+    	return gps.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
     
-    public boolean isGpsAvailable() {
-    	return gps.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    public boolean isAutoPanningMode() {
+    	return autoPanningMode;
+    }
+    
+    public void setAutoPanningMode(boolean autoPanningMode) {
+    	this.autoPanningMode = autoPanningMode;
+    }
+    
+    public boolean isNaviMode() {
+    	return naviMode;
+    }
+    
+    public void setNaviMode(boolean naviMode) {
+    	this.naviMode = naviMode;
+    }
+    
+    public boolean isBikeMode() {
+    	return bikeMode;
+    }
+    
+    public void setBikeMode(boolean bikeMode) {
+    	// TODO Router-Schnittstelle aendern - bikeMode dynamisch!
+    	if (this.bikeMode != bikeMode) router = null;
+    	this.bikeMode = bikeMode;
     }
     
     /******************************** SD **********************************/
     
-    public boolean isCalculatingRoute() {
+    public boolean isRouterBusy() {
     	return routingThread != null && routingThread.isAlive();
     }
     
-    public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget,
-    		final boolean bikeMode) throws IllegalStateException {
-    	if (isCalculatingRoute()) throw new IllegalStateException("Routing in progress");
+    public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget)
+    		throws IllegalStateException {
+    	if (isRouterBusy()) throw new IllegalStateException("Routing in progress");
 
 		speak(MSG_INF_ROUTE_CALC.getMessage());
 
@@ -142,7 +165,7 @@ public class MainApplication extends Application implements LocationListener, On
 			@Override
 			public void run() {
 				try {
-					long[] geometry = routeAsync(tpSource, tpTarget, bikeMode);
+					long[] geometry = routeAsync(tpSource, tpTarget);
 					if (appListener != null) {
 						appListener.onRouteChanged(geometry);
 					}
@@ -156,11 +179,9 @@ public class MainApplication extends Application implements LocationListener, On
     	routingThread.start();
     }
     
-    private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget,
-    		boolean bikeMode) {
+    private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget) {
 		File cacheFile = new File(getCacheDir(), "osm2po.sd");
-		if (null == router || bikeMode != this.bikeMode) {
-			this.bikeMode = bikeMode;
+		if (null == router) {
 			router = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
 		}
 
@@ -204,32 +225,38 @@ public class MainApplication extends Application implements LocationListener, On
     public int getKmh() {
     	return guide.getKmh();
     }
-
-    private boolean isOnGpsBusy;
-    public void onGps(double lat, double lon, float bearing) {
-    	lastLat = lat;
-    	lastLon = lon;
-    	
-    	if (isOnGpsBusy || isCalculatingRoute()) return;
-    	isOnGpsBusy = true;
-    	
+    
+    private boolean isNavigateBusy;
+    /**
+     * This method will be called by real GPS and Simulation.
+     * @param lat double Latitude
+     * @param lon double Longitude
+     * @param bearing float bearing
+     */
+    public void navigate(double lat, double lon, float bearing) {
     	try {
+    		lastLat = lat;
+    		lastLon = lon;
+    		
 			if (appListener != null) {
-				appListener.onLocationChanged(lat, lon, bearing);
+				
+				if (isNavigateBusy || isRouterBusy()) return;
+				isNavigateBusy = true;
+
 				if (guide != null) {
 					SdLocation loc = SdLocation.snap(path, lat, lon);
-	                appListener.onLocate(loc);
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
-	                	boolean immediate = tts.isSpeaking();
-	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), immediate);
+	                	appListener.onPositionChanged(loc.getLat(), loc.getLon(), bearing);
+
+	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), tts.isSpeaking());
 	                    if (msgs != null) {
 	                    	for (SdMessage msg : msgs) speak(msg.getMessage());
 	                    }
 	                    
 	                } else {
-                		if (++nJitters > 5) {
+                		if (++nJitters > 10) {
                 			this.appListener.onRouteLost();
                 			nJitters = 0;
                 		}
@@ -242,7 +269,7 @@ public class MainApplication extends Application implements LocationListener, On
     		speak("Error " + t.getMessage());
     		
 		} finally {
-			isOnGpsBusy = false;
+			isNavigateBusy = false;
 		}
     }
     
@@ -250,7 +277,9 @@ public class MainApplication extends Application implements LocationListener, On
 	public void onLocationChanged(Location location) {
 		double lat = location.getLatitude();
 		double lon = location.getLongitude();
-		if (gpsListening) onGps(lat, lon, location.getBearing());
+		float bearing = location.getBearing();
+		appListener.onGpsChanged(lat, lon, bearing);
+		if (naviMode) navigate(lat, lon, bearing);
 	}
 
 	@Override
@@ -267,19 +296,19 @@ public class MainApplication extends Application implements LocationListener, On
 
 	/******************************** TTS *********************************/
 
-	public void setQuiet(boolean quiet) {
-		this.quiet = quiet;
-		if (quiet) {
+	public void setQuietMode(boolean quietMode) {
+		this.quietMode = quietMode;
+		if (quietMode) {
 			if (tts.isSpeaking()) tts.stop();
 		}
 	}
 	
-	public boolean isQuiet() {
-		return this.quiet;
+	public boolean isQuietMode() {
+		return this.quietMode;
 	}
 	
 	public void speak(String msg) {
-		if (this.quiet) return;
+		if (this.quietMode) return;
 		if (null == msg) return;
 		
 		tts.speak(msg, QUEUE_ADD, null);
