@@ -108,7 +108,7 @@ public class MainApplication extends Application implements LocationListener, On
     	this.appListener = appListener;
     };
     
-    public void startGps() {
+    public void activateGps() {
     	if (!isGpsOn()) {
     		Intent gpsSettings = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
     		gpsSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -136,6 +136,7 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     public void setNaviMode(boolean naviMode) {
+    	if (naviMode) activateGps(); 
     	this.naviMode = naviMode;
     }
     

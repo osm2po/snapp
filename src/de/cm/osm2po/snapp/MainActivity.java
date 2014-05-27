@@ -84,7 +84,9 @@ implements MarkerSelectListener, AppListener {
 		tglNaviOrEdit = (ToggleButton) findViewById(R.id.tglNaviOrEdit);
 		tglNaviOrEdit.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				if (tglNaviOrEdit.isChecked()) app.startGps();
+				app.setNaviMode(tglNaviOrEdit.isChecked());
+				tglPanOrHold.setChecked(tglNaviOrEdit.isChecked());
+				app.setAutoPanningMode(tglPanOrHold.isChecked());
 			}
 		});
 
@@ -155,9 +157,9 @@ implements MarkerSelectListener, AppListener {
 	protected void onResume() {
 		super.onResume();
 		tglCarOrBike.setChecked(!app.isBikeMode());
+		tglToneOrQuiet.setChecked(!app.isQuietMode());
 		tglNaviOrEdit.setChecked(app.isNaviMode());
 		tglPanOrHold.setChecked(app.isAutoPanningMode());
-		tglToneOrQuiet.setChecked(!app.isQuietMode());
 	}
 	
 	@Override
