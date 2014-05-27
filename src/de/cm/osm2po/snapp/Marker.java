@@ -8,7 +8,7 @@ public enum Marker {
 	TOUCH_MARKER(1, "Touch", R.drawable.ic_marker16, false),
 	SOURCE_MARKER(2, "Source", R.drawable.ic_source32, true),
 	TARGET_MARKER(3, "Target", R.drawable.ic_target32, true),
-	GPS_MARKER(4, "Gps", R.drawable.ic_gps40, false),
+	GPS_MARKER(4, "Gps", R.drawable.ic_gps32, false),
 	POS_MARKER(5, "Position", R.drawable.ic_north32, false);
 
 	private int index;
