@@ -146,8 +146,6 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     public void setBikeMode(boolean bikeMode) {
-    	// TODO Router-Schnittstelle aendern - bikeMode dynamisch!
-    	if (this.bikeMode != bikeMode) router = null;
     	this.bikeMode = bikeMode;
     }
     
@@ -232,7 +230,7 @@ public class MainApplication extends Application implements LocationListener, On
      * @param lon double Longitude
      * @param bearing float bearing
      */
-    public void navigate(double lat, double lon, float bearing) {
+    public void navigate(double lat, double lon) {
     	try {
     		lastLat = lat;
     		lastLon = lon;
@@ -247,7 +245,7 @@ public class MainApplication extends Application implements LocationListener, On
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
-	                	appListener.onPositionChanged(loc.getLat(), loc.getLon(), bearing);
+	                	appListener.onPositionChanged(loc.getLat(), loc.getLon(), loc.getBearing());
 
 	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), tts.isSpeaking());
 	                    if (msgs != null) {
@@ -278,7 +276,7 @@ public class MainApplication extends Application implements LocationListener, On
 		double lon = location.getLongitude();
 		float bearing = location.getBearing();
 		appListener.onGpsChanged(lat, lon, bearing);
-		if (naviMode) navigate(lat, lon, bearing);
+		if (naviMode) navigate(lat, lon);
 	}
 
 	@Override

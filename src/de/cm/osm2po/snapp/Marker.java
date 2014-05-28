@@ -6,10 +6,10 @@ public enum Marker {
 	// TODO NYI handle index as zindex
 	HOME_MARKER(0, "Home", R.drawable.ic_home32, true),
 	TOUCH_MARKER(1, "Touch", R.drawable.ic_touch16, false),
-	SOURCE_MARKER(2, "Source", R.drawable.ic_source32, true),
-	TARGET_MARKER(3, "Target", R.drawable.ic_target32, true),
-	POS_MARKER(4, "Position", R.drawable.ic_position48, false),
-	GPS_MARKER(5, "Gps", R.drawable.ic_gps32, false);
+	GPS_MARKER(2, "Gps", R.drawable.ic_gps48, false),
+	POS_MARKER(3, "Position", R.drawable.ic_position48, false),
+	SOURCE_MARKER(4, "Source", R.drawable.ic_source32, true),
+	TARGET_MARKER(5, "Target", R.drawable.ic_target32, true);
 
 	private int index;
 	private String title;

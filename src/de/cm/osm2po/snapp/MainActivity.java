@@ -213,7 +213,7 @@ implements MarkerSelectListener, AppListener {
 		double lon = geoPoint.getLongitude();
 		
 		if (GPS_MARKER == markerType) {
-			app.navigate(lat, lon, 0); // Simulation
+			app.navigate(lat, lon); // Simulation
 			return;
 		}
 		
