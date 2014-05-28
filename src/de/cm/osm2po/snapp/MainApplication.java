@@ -183,11 +183,8 @@ public class MainApplication extends Application implements LocationListener, On
     
     private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget) {
 		File cacheFile = new File(getCacheDir(), "osm2po.sd");
-		if (null == router) {
-			router = new SdRouter(graph, cacheFile, 0, 1.1, !bikeMode, !bikeMode);
-		}
-
-		path = router.findPath(tpSource, tpTarget);
+		if (null == router)	router = new SdRouter(graph, cacheFile);
+		path = router.findPath(tpSource, tpTarget, 0, 1.1, !bikeMode, !bikeMode);
 		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
 		
 		return createGeometry();
