@@ -136,7 +136,8 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     public void setNaviMode(boolean naviMode) {
-    	if (naviMode) activateGps(); 
+    	if (naviMode) activateGps();
+    	if (guide != null && naviMode) guide.reset();
     	this.naviMode = naviMode;
     }
     

@@ -78,7 +78,10 @@ implements MarkerSelectListener, AppListener {
 		
 		tglCarOrBike = (ToggleButton) findViewById(R.id.tglCarOrBike);
 		tglCarOrBike.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {app.setBikeMode(!tglCarOrBike.isChecked()); route();}
+			public void onClick(View v) {
+				app.setBikeMode(!tglCarOrBike.isChecked());
+				route();
+			}
 		});
 		
 		tglNaviOrEdit = (ToggleButton) findViewById(R.id.tglNaviOrEdit);
