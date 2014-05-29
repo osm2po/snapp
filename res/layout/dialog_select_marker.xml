@@ -29,7 +29,7 @@
         android:id="@+id/btn_gps_simu"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:src="@drawable/ic_position48" />
+        android:src="@drawable/ic_pos32" />
     
 </LinearLayout>
 
