@@ -275,7 +275,8 @@ public class MainApplication extends Application implements LocationListener, On
 		double lat = location.getLatitude();
 		double lon = location.getLongitude();
 		float bearing = location.getBearing();
-		appListener.onGpsChanged(lat, lon, bearing);
+		if (appListener != null) 
+			appListener.onGpsChanged(lat, lon, bearing);
 		if (naviMode) navigate(lat, lon);
 	}
 
