@@ -1,5 +1,7 @@
 package de.cm.osm2po.snapp;
 
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_POINT_FIND;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_CALC;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_LOST;
@@ -44,7 +46,7 @@ import android.widget.ToggleButton;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainActivity extends MapActivity
-implements MarkerSelectListener, AppListener {
+implements MarkerEditListener, AppListener {
 	
 	private RoutesLayer routesLayer;
 	private MarkersLayer markersLayer;
@@ -60,6 +62,7 @@ implements MarkerSelectListener, AppListener {
 	private MapView mapView;
 	private long nGpsCalls;
 	private ProgressDialog progressDialog;
+	private MarkerSelectDialog markerSelectDialog;
 	
 	private final static File STATE_FILE = new File(getSdDir(), "snapp.state");
 	private static final int STATE_FILE_VERSION = 3;
@@ -73,6 +76,8 @@ implements MarkerSelectListener, AppListener {
 		progressDialog = new ProgressDialog(this, R.style.StyledDialog);
 		progressDialog.setMessage("Calculating Route...");
 
+		markerSelectDialog = new MarkerSelectDialog();
+		
 		app = (MainApplication) this.getApplication();
 		if (app.isRouterBusy()) progressDialog.show();
 		
@@ -87,9 +92,11 @@ implements MarkerSelectListener, AppListener {
 		tglNaviOrEdit = (ToggleButton) findViewById(R.id.tglNaviOrEdit);
 		tglNaviOrEdit.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				app.setNaviMode(tglNaviOrEdit.isChecked());
-				tglPanOrHold.setChecked(tglNaviOrEdit.isChecked());
-				app.setAutoPanningMode(tglPanOrHold.isChecked());
+				boolean navMode = tglNaviOrEdit.isChecked();
+				app.setNaviMode(navMode);
+				tglPanOrHold.setChecked(navMode);
+				app.setAutoPanningMode(navMode);
+				txtAddress.setVisibility(navMode ? INVISIBLE : VISIBLE);
 			}
 		});
 
@@ -131,7 +138,7 @@ implements MarkerSelectListener, AppListener {
 		routesLayer = new RoutesLayer();
 		mapView.getOverlays().add(routesLayer);
 
-		markersLayer = new MarkersLayer(this);
+		markersLayer = new MarkersLayer(this, this);
 		mapView.getOverlays().add(markersLayer);
 
         tpSource = null;
@@ -180,9 +187,9 @@ implements MarkerSelectListener, AppListener {
 				tpSource = null;
 				tpTarget = null;
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp1);
-				onMarkerSelected(SOURCE_MARKER);
+				onMarkerSpecified(SOURCE_MARKER); // fake
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp2);
-				onMarkerSelected(TARGET_MARKER);
+				onMarkerSpecified(TARGET_MARKER); // fake
 			}
 			
 		}
@@ -190,7 +197,7 @@ implements MarkerSelectListener, AppListener {
 	}
 	
 	@Override
-	public void onGpsChanged(double lat, double lon, float bearing) {
+	public void onGpsSignal(double lat, double lon, float bearing) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		markersLayer.moveMarker(GPS_MARKER, geoPoint, bearing);
 		if (app.isAutoPanningMode()) {
@@ -200,39 +207,39 @@ implements MarkerSelectListener, AppListener {
 	}
 	
 	@Override
-	public void onPositionChanged(double lat, double lon, float bearing) {
+	public void onPathPositionChanged(double lat, double lon, float bearing) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		lblSpeed.setText(app.getKmh() + " km/h");
 		markersLayer.moveMarker(POS_MARKER, geoPoint, bearing);
 	}
 
 	@Override
-	public void onMarkerSelected(Marker markerType) {
+	public void onMarkerSpecified(Marker marker) {
 		GeoPoint geoPoint = markersLayer.getLastTouchPosition();
 		double lat = geoPoint.getLatitude();
 		double lon = geoPoint.getLongitude();
 		
-		if (GPS_MARKER == markerType) {
+		if (GPS_MARKER == marker) {
 			app.navigate(lat, lon); // Simulation
 			return;
 		}
 		
-		if (HOME_MARKER == markerType) {
-			markersLayer.moveMarker(markerType, geoPoint);
+		if (HOME_MARKER == marker) {
+			markersLayer.moveMarker(marker, geoPoint);
 			return;
 		}
 		
 		SdTouchPoint tp = SdTouchPoint.create(app.getGraph(), (float)lat, (float)lon);
 		
-		if (markerType == SOURCE_MARKER) {
+		if (marker == SOURCE_MARKER) {
 			tpSource = tp;
-		} else if (markerType == TARGET_MARKER) {
+		} else if (marker == TARGET_MARKER) {
 			tpTarget = tp;
 		}
 
 		if (tp != null) {
 			geoPoint = new GeoPoint(tp.getLat(), tp.getLon());
-			markersLayer.moveMarker(markerType, geoPoint);
+			markersLayer.moveMarker(marker, geoPoint);
 		} else {
 			app.speak(toast(MSG_ERR_POINT_FIND.getMessage()));
 		}
@@ -274,7 +281,7 @@ implements MarkerSelectListener, AppListener {
 	public void onRouteLost() {
 		app.speak(MSG_ERR_ROUTE_LOST.getMessage());
 		markersLayer.moveMarker(TOUCH_MARKER, app.getLastGpsPosition());
-		onMarkerSelected(SOURCE_MARKER);
+		onMarkerSpecified(SOURCE_MARKER); // Fake
 	}
 
 	
@@ -340,10 +347,12 @@ implements MarkerSelectListener, AppListener {
 			tglPanOrHold.setChecked(dis.readBoolean());
 			tglToneOrQuiet.setChecked(dis.readBoolean());
 
-			app.setBikeMode(!tglCarOrBike.isChecked());
 			app.setNaviMode(tglNaviOrEdit.isChecked());
 			app.setAutoPanningMode(tglPanOrHold.isChecked());
+			app.setBikeMode(!tglCarOrBike.isChecked());
 			app.setQuietMode(!tglToneOrQuiet.isChecked());
+
+			txtAddress.setVisibility(tglNaviOrEdit.isChecked() ? INVISIBLE : VISIBLE);
 			
 			int zoomLevel = dis.readInt();
 			mapView.getController().setZoom(zoomLevel);
@@ -401,7 +410,7 @@ implements MarkerSelectListener, AppListener {
 				mapView.setCenter(gpAddress);
 				mapView.getController().setZoom(14);
 				markersLayer.moveMarker(TOUCH_MARKER, gpAddress);
-				markersLayer.showMarkerSelectDialog();
+				markerSelectDialog.show(getFragmentManager(), "dlg_marker");
 				return true;
 			} else {
 				toast("Address not found");
@@ -412,5 +421,11 @@ implements MarkerSelectListener, AppListener {
 		return false;
 	}
 
+	@Override
+	public void onPositionRequest(GeoPoint geoPoint) {
+		if (!tglNaviOrEdit.isChecked()) {
+			markerSelectDialog.show(getFragmentManager(), "dlg_marker");
+		}
+	}
 
 }

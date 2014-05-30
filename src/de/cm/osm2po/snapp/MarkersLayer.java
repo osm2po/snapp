@@ -10,19 +10,15 @@ import org.mapsforge.core.GeoPoint;
 import android.app.Activity;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
 
-public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectListener {
+public class MarkersLayer extends ArrayItemizedOverlay {
 
-	private Activity activity;
+	private MarkerEditListener listener;
 	private OverlayItem[] markers; // Erlaubt den Zugriff via MarkerTypeEnum
-	private MarkerSelectListener selectMarkerListener;
-	private MarkerSelectDialog markerSelectDialog;
 
-	public MarkersLayer(Activity activity) {
+	public MarkersLayer(MarkerEditListener listener, Activity activity) {
 		super(null);
-		this.activity = activity;
-		markerSelectDialog = new MarkerSelectDialog();
+		this.listener = listener;
 		
     	Marker[] mtes = Marker.values();
     	int nMtes = mtes.length;
@@ -65,31 +61,11 @@ public class MarkersLayer extends ArrayItemizedOverlay implements MarkerSelectLi
 		return markers[TOUCH_MARKER.getIndex()].getPoint();
 	}
 	
-	public MarkersLayer setListener(MarkerSelectListener listener) {
-		this.selectMarkerListener = listener;
-		return this;
-	}
-
 	@Override
 	public boolean onLongPress(GeoPoint geoPoint, MapView mapView) {
 		moveMarker(TOUCH_MARKER, geoPoint);
-		showMarkerSelectDialog();
+		listener.onPositionRequest(geoPoint);
 		return true;
-	}
-	
-	public void showMarkerSelectDialog() {
-		markerSelectDialog.show(activity.getFragmentManager(), "dlg_marker");
-	}
-
-	@Override
-	public void onMarkerSelected(Marker mte) {
-		if (selectMarkerListener != null) {
-			selectMarkerListener.onMarkerSelected(mte);
-		} else if (activity instanceof MarkerSelectListener) {
-			((MarkerSelectListener)activity).onMarkerSelected(mte);
-		} else {
-			Log.e("SNAPP", "Please provide a Listener");
-		}
 	}
 
 }

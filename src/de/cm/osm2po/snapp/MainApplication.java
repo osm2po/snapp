@@ -245,7 +245,7 @@ public class MainApplication extends Application implements LocationListener, On
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
-	                	appListener.onPositionChanged(loc.getLat(), loc.getLon(), loc.getBearing());
+	                	appListener.onPathPositionChanged(loc.getLat(), loc.getLon(), loc.getBearing());
 
 	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), tts.isSpeaking());
 	                    if (msgs != null) {
@@ -276,7 +276,7 @@ public class MainApplication extends Application implements LocationListener, On
 		double lon = location.getLongitude();
 		float bearing = location.getBearing();
 		if (appListener != null) 
-			appListener.onGpsChanged(lat, lon, bearing);
+			appListener.onGpsSignal(lat, lon, bearing);
 		if (naviMode) navigate(lat, lon);
 	}
 

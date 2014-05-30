@@ -16,7 +16,9 @@ import android.view.Window;
 import android.widget.ImageButton;
 
 public class MarkerSelectDialog extends DialogFragment implements OnClickListener {
-
+	
+	MarkerEditListener listener;
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -46,13 +48,13 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 	public void onClick(View v) {
 		dismiss();
 		Activity activity = this.getActivity();
-		if (activity instanceof MarkerSelectListener) {
-			MarkerSelectListener msl = (MarkerSelectListener) activity;
+		if (activity instanceof MarkerEditListener) {
+			MarkerEditListener msl = (MarkerEditListener) activity;
 			switch (v.getId()) {
-			case R.id.btn_source: msl.onMarkerSelected(SOURCE_MARKER); break;
-			case R.id.btn_target: msl.onMarkerSelected(TARGET_MARKER); break;
-			case R.id.btn_gps_simu: msl.onMarkerSelected(GPS_MARKER); break;
-			case R.id.btn_home: msl.onMarkerSelected(HOME_MARKER); break;
+			case R.id.btn_source: msl.onMarkerSpecified(SOURCE_MARKER); break;
+			case R.id.btn_target: msl.onMarkerSpecified(TARGET_MARKER); break;
+			case R.id.btn_gps_simu: msl.onMarkerSpecified(GPS_MARKER); break;
+			case R.id.btn_home: msl.onMarkerSpecified(HOME_MARKER); break;
 			}
 		}
 	}
