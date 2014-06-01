@@ -1,10 +1,10 @@
 package de.cm.osm2po.snapp;
 
 import static android.speech.tts.TextToSpeech.QUEUE_ADD;
+import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_LOST;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_INF_ROUTE_CALC;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 import org.mapsforge.core.GeoPoint;
@@ -22,6 +22,7 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.widget.Toast;
 import de.cm.osm2po.sd.guide.SdEvent;
 import de.cm.osm2po.sd.guide.SdForecast;
 import de.cm.osm2po.sd.guide.SdGuide;
@@ -31,7 +32,6 @@ import de.cm.osm2po.sd.guide.SdMessageResource;
 import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
-import de.cm.osm2po.sd.routing.SdTouchPoint;
 
 public class MainApplication extends Application implements LocationListener, OnInitListener {
 
@@ -39,25 +39,18 @@ public class MainApplication extends Application implements LocationListener, On
 	private TextToSpeech tts;
 	private SdGraph graph;
 	private SdGuide guide;
-	private SdPath path;
 	private File mapFile; // Mapsforge
 	private AppListener appListener; // there is only one
 	private Thread routingThread;
 	private SdRouter router;
 	private int nJitters;
 
-	private boolean quietMode;
-	private boolean bikeMode;
-	private boolean autoPanningMode;
-	private boolean naviMode;
+	private AppState appState;
 	
-	private double lastLat;
-	private double lastLon;
-	
-	public final static File getSdDir() {
+	public final static File getAppDir() {
         File sdcard = Environment.getExternalStorageDirectory();
         File sdDir = new File(sdcard, "Snapp");
-        sdDir.mkdir();
+        if (!sdDir.exists()) sdDir.mkdir();
         return sdDir;
 	}
 	
@@ -65,23 +58,35 @@ public class MainApplication extends Application implements LocationListener, On
     public void onCreate() {
     	super.onCreate();
 
+    	File pathCacheFile = new File(getCacheDir(), "osm2po.sd");
+
+    	graph = new SdGraph(new File(getAppDir(), "snapp.gpt"));
+    	mapFile = new File(getAppDir(), "snapp.map");
+    	appState = new AppState().restoreAppState(graph);
+    	
+    	router = new SdRouter(graph, pathCacheFile);
+    	
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
-    	Location loc = gps.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-    	if (loc != null) {
-	    	this.lastLat = loc.getLatitude();
-	    	this.lastLon = loc.getLongitude();
-    	}
 
     	tts = new TextToSpeech(this, this);
     	registerTracks();
-    	
-        graph = new SdGraph(new File(getSdDir(), "snapp.gpt"));
-        mapFile = new File(getSdDir(), "snapp.map");
     }
     
+    @Override
+    public void onTerminate() {
+    	super.onTerminate();
+    	tts.shutdown();
+    	saveAppState();
+    	graph.close(); // must be last line!
+    }
+    
+    protected boolean saveAppState() {
+    	return appState.saveAppState(graph);
+    }
+
     private void registerTracks() {
-    	File dir = new File(getSdDir(), "tracks");
+    	File dir = new File(getAppDir(), "tracks");
     	for (SdMessageResource msg : SdMessageResource.values()) {
     		String key = msg.getKey();
     		if (null == key) continue;
@@ -96,13 +101,6 @@ public class MainApplication extends Application implements LocationListener, On
     
     public File getMapFile() {return mapFile;}
     public SdGraph getGraph() {return graph;}
-    
-    @Override
-    public void onTerminate() {
-    	super.onTerminate();
-    	tts.shutdown();
-    	graph.close();
-    }
     
     public void setAppListener(AppListener appListener) {
     	this.appListener = appListener;
@@ -123,30 +121,35 @@ public class MainApplication extends Application implements LocationListener, On
     	return gps.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
     
-    public boolean isAutoPanningMode() {
-    	return autoPanningMode;
+    public AppState getAppState() {
+    	return appState;
     }
     
-    public void setAutoPanningMode(boolean autoPanningMode) {
-    	this.autoPanningMode = autoPanningMode;
+    public GeoPoint getLastPosition() {
+    	double lat = appState.getLastLat();
+    	double lon = appState.getLastLon();
+    	if (0d == lat || 0d == lon) return null; // unsafe but unlikely
+    	return new GeoPoint(lat, lon);
     }
     
-    public boolean isNaviMode() {
-    	return naviMode;
+    public GeoPoint getHomePosition() {
+    	double lat = appState.getHomeLat();
+    	double lon = appState.getHomeLon();
+    	if (0d == lat || 0d == lon) return null; // unsafe but unlikely
+    	return new GeoPoint(lat, lon);
     }
     
-    public void setNaviMode(boolean naviMode) {
-    	if (naviMode) activateGps();
-    	if (guide != null && naviMode) guide.reset();
-    	this.naviMode = naviMode;
+    public GeoPoint getMapPosition() {
+    	double lat = appState.getMapLat();
+    	double lon = appState.getMapLon();
+    	if (0d == lat || 0d == lon) return null; // unsafe but unlikely
+    	return new GeoPoint(lat, lon);
     }
     
-    public boolean isBikeMode() {
-    	return bikeMode;
-    }
-    
-    public void setBikeMode(boolean bikeMode) {
-    	this.bikeMode = bikeMode;
+    public void startNavi() {
+    	if (!appState.isNavMode()) return;
+    	activateGps();
+    	if (guide != null) guide.reset();
     }
     
     /******************************** SD **********************************/
@@ -155,69 +158,44 @@ public class MainApplication extends Application implements LocationListener, On
     	return routingThread != null && routingThread.isAlive();
     }
     
-    public void route(final SdTouchPoint tpSource, final SdTouchPoint tpTarget)
-    		throws IllegalStateException {
-    	if (isRouterBusy()) throw new IllegalStateException("Routing in progress");
-
+    public boolean runRouteCalculation() {
+    	
+    	if (isRouterBusy() || null == appState.getSource() || null == appState.getTarget()) {
+    		return false;
+    	}
+    	
 		speak(MSG_INF_ROUTE_CALC.getMessage());
 
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					long[] geometry = routeAsync(tpSource, tpTarget);
+					calculateRoute();
 					if (appListener != null) {
-						appListener.onRouteChanged(geometry);
+						appListener.onRouteChanged();
 					}
 				} catch (Exception e) {
-					if (appListener != null) {
-						appListener.onRouteChanged(null);
-					}
 				}
 			}
 		});
+    	
     	routingThread.start();
+    	return true;
     }
     
-    private long[] routeAsync(SdTouchPoint tpSource, SdTouchPoint tpTarget) {
-		File cacheFile = new File(getCacheDir(), "osm2po.sd");
-		if (null == router) router = new SdRouter(graph, cacheFile);
-		path = router.findPath(tpSource, tpTarget, 0, 1.1, !bikeMode, !bikeMode);
+    private void calculateRoute() {
+		boolean bikeMode = appState.isBikeMode();
+		SdPath path = router.findPath(
+				appState.getSource(), appState.getTarget(), 0, 1.1, !bikeMode, !bikeMode);
+		appState.setPath(path);
 		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
-		
-		return createGeometry();
     }
     
     public boolean isGuiding() {
     	return guide != null;
     }
     
-    private long[] createGeometry() {
-        if (null == path) return null;
-        int nEdges = path.getNumberOfEdges();
-        
-        long[] points = new long[1000];
-        int nPoints = 0;
-        // TODO eliminate redundant points at connections
-        for (int e = 0; e < nEdges; e++) {
-        	long[] coords = path.fetchGeometry(e);
-            
-            for (int j = 0; j < coords.length; j++) {
-            	if (nPoints == points.length) // ArrayOverflow
-            		points = Arrays.copyOf(points, nPoints * 2);
-            	
-            	points[nPoints++] = coords[j];
-            }
-        }
-        return Arrays.copyOf(points, nPoints);
-    }
-
-    
     /******************************** GPS *********************************/
-    
-    public GeoPoint getLastGpsPosition() {
-    	return new GeoPoint(lastLat, lastLon);
-    }
     
     public int getKmh() {
     	return guide.getKmh();
@@ -232,8 +210,8 @@ public class MainApplication extends Application implements LocationListener, On
      */
     public void navigate(double lat, double lon) {
     	try {
-    		lastLat = lat;
-    		lastLon = lon;
+    		appState.setLastLat(lat);
+    		appState.setLastLon(lon);
     		
 			if (appListener != null) {
 				
@@ -241,7 +219,7 @@ public class MainApplication extends Application implements LocationListener, On
 				isNavigateBusy = true;
 
 				if (guide != null) {
-					SdLocation loc = SdLocation.snap(path, lat, lon);
+					SdLocation loc = SdLocation.snap(appState.getPath(), lat, lon);
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
@@ -249,11 +227,18 @@ public class MainApplication extends Application implements LocationListener, On
 
 	                    SdMessage[] msgs = guide.lookAhead(loc.getMeter(), tts.isSpeaking());
 	                    if (msgs != null) {
-	                    	for (SdMessage msg : msgs) speak(msg.getMessage());
+	                    	if (appState.isQuietMode()) {
+	                    		String s = "";
+	                    		for (SdMessage msg : msgs) s += msg.getMessage() + " ";
+	                    		toast(s);
+	                    	} else {
+	                    		for (SdMessage msg : msgs) speak(msg.getMessage());
+	                    	}
 	                    }
 	                    
 	                } else {
                 		if (++nJitters > 10) {
+                			speak(MSG_ERR_ROUTE_LOST.getMessage());
                 			this.appListener.onRouteLost();
                 			nJitters = 0;
                 		}
@@ -271,13 +256,13 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
 	@Override
-	public void onLocationChanged(Location location) {
+	public void onLocationChanged(Location location) { // from GPS
 		double lat = location.getLatitude();
 		double lon = location.getLongitude();
 		float bearing = location.getBearing();
 		if (appListener != null) 
 			appListener.onGpsSignal(lat, lon, bearing);
-		if (naviMode) navigate(lat, lon);
+		if (appState.isNavMode()) navigate(lat, lon);
 	}
 
 	@Override
@@ -295,18 +280,18 @@ public class MainApplication extends Application implements LocationListener, On
 	/******************************** TTS *********************************/
 
 	public void setQuietMode(boolean quietMode) {
-		this.quietMode = quietMode;
+		appState.setQuietMode(quietMode);
 		if (quietMode) {
 			if (tts.isSpeaking()) tts.stop();
 		}
 	}
 	
 	public boolean isQuietMode() {
-		return this.quietMode;
+		return appState.isQuietMode();
 	}
 	
 	public void speak(String msg) {
-		if (this.quietMode) return;
+		if (appState.isQuietMode()) return;
 		if (null == msg) return;
 		
 		tts.speak(msg, QUEUE_ADD, null);
@@ -327,6 +312,13 @@ public class MainApplication extends Application implements LocationListener, On
 			return new GeoPoint(adr.getLatitude(), adr.getLongitude());
 		}
 		return null;
+	}
+
+	/************************** Toast *************************************/
+	
+	private String toast(String msg) {
+		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+		return msg;
 	}
 
 }

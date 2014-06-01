@@ -43,6 +43,7 @@ public class RoutesLayer extends ArrayWayOverlay {
 	}
 	
 	public void drawRoute(long[] geometry) {
+		if (overlayWay != null) removeWay(overlayWay);
 		if (null == geometry) return;
 		
     	int n = geometry.length;
@@ -54,7 +55,6 @@ public class RoutesLayer extends ArrayWayOverlay {
         }
 		
 		GeoPoint[][] geoWays = new GeoPoint[][]{geoPoints};
-		if (overlayWay != null) removeWay(overlayWay);
 		overlayWay = new OverlayWay(geoWays, defaultFillPaint(), defaultOutlinePaint());
 		addWay(overlayWay);
 		requestRedraw();
