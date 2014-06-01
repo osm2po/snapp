@@ -58,19 +58,25 @@ public class MainApplication extends Application implements LocationListener, On
     public void onCreate() {
     	super.onCreate();
 
+    	toast("Starting Application");
+    	
     	File pathCacheFile = new File(getCacheDir(), "osm2po.sd");
 
     	graph = new SdGraph(new File(getAppDir(), "snapp.gpt"));
     	mapFile = new File(getAppDir(), "snapp.map");
     	appState = new AppState().restoreAppState(graph);
-    	
     	router = new SdRouter(graph, pathCacheFile);
+
+    	SdPath path = appState.getPath();
+		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
     	
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
 
     	tts = new TextToSpeech(this, this);
     	registerTracks();
+    	
+    	startNavi();
     }
     
     @Override
