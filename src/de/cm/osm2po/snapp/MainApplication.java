@@ -81,10 +81,10 @@ public class MainApplication extends Application implements LocationListener, On
     
     @Override
     public void onTerminate() {
+    	// CAUTION! onTerminate only fires on emulators!
     	super.onTerminate();
     	tts.shutdown();
-    	saveAppState();
-    	graph.close(); // must be last line!
+    	graph.close();
     }
     
     protected boolean saveAppState() {

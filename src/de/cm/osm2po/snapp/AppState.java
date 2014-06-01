@@ -90,7 +90,7 @@ public class AppState {
 
 			int saveInstanceVersion = dis.readInt();
 			if (saveInstanceVersion != STATE_FILE_VERSION) {
-				dis.close(); // FIXME exception thrown here, sometimes; why?
+				dis.close(); // FIXME WTF android throws an exception here?
 				return this;
 			}
 
@@ -115,7 +115,7 @@ public class AppState {
 			
 			restored = true;
 
-			dis.close(); // FIXME exception thrown here, sometimes; why?
+			dis.close(); // FIXME WTF android throws an exception here?
 
 		} catch (Throwable t) {
 			Log.e(getClass().getName(), t.toString());
@@ -156,7 +156,7 @@ public class AppState {
 			
 			saved = true;
 			
-			dos.close(); // FIXME exception thrown here, sometimes; why?
+			dos.close(); // FIXME WTF android throws an exception here?
 			
 			return true;
 

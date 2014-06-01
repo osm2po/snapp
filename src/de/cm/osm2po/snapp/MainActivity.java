@@ -297,7 +297,7 @@ implements MarkerEditListener, AppListener {
 			appState.setHomeLon(gpHome.getLongitude());
 		}
 		
-		//app.saveAppState(); // useful for debugging
+		app.saveAppState();
 	}
 	
 	private void restoreViewState() {
