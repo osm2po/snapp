@@ -34,13 +34,13 @@ public class MarkersLayer extends ArrayItemizedOverlay {
     			}
     			ArrayItemizedOverlay.boundCenter(drawable);
     		}
-    		markers[i] = new OverlayItem(null, mte.getTitle(), null, drawable);
+    		markers[i] = new OverlayItem(null, null, null, drawable);
     		addItem(markers[i]);
     	}
 	}
 
 	public void moveMarker(Marker mte, GeoPoint geoPoint, float rotate) {
-		OverlayItem overlayItem = markers[mte.getIndex()];
+		OverlayItem overlayItem = markers[mte.ordinal()];
 		Drawable drawable = overlayItem.getMarker();
 		if (drawable instanceof RotatableBitmapDrawable) {
 			((RotatableBitmapDrawable) drawable).rotate(rotate);
@@ -49,16 +49,16 @@ public class MarkersLayer extends ArrayItemizedOverlay {
 	}
 	
 	public void moveMarker(Marker mte, GeoPoint geoPoint) {
-		markers[mte.getIndex()].setPoint(geoPoint);
+		markers[mte.ordinal()].setPoint(geoPoint);
 		requestRedraw();
 	}
 	
 	public GeoPoint getMarkerPosition(Marker mte) {
-		return markers[mte.getIndex()].getPoint();
+		return markers[mte.ordinal()].getPoint();
 	}
 
 	public GeoPoint getLastTouchPosition() {
-		return markers[TOUCH_MARKER.getIndex()].getPoint();
+		return markers[TOUCH_MARKER.ordinal()].getPoint();
 	}
 	
 	@Override

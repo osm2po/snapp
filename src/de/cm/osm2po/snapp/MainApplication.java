@@ -131,27 +131,6 @@ public class MainApplication extends Application implements LocationListener, On
     	return appState;
     }
     
-    public GeoPoint getLastPosition() {
-    	double lat = appState.getLastLat();
-    	double lon = appState.getLastLon();
-    	if (0d == lat || 0d == lon) return null; // unsafe but unlikely
-    	return new GeoPoint(lat, lon);
-    }
-    
-    public GeoPoint getHomePosition() {
-    	double lat = appState.getHomeLat();
-    	double lon = appState.getHomeLon();
-    	if (0d == lat || 0d == lon) return null; // unsafe but unlikely
-    	return new GeoPoint(lat, lon);
-    }
-    
-    public GeoPoint getMapPosition() {
-    	double lat = appState.getMapLat();
-    	double lon = appState.getMapLon();
-    	if (0d == lat || 0d == lon) return null; // unsafe but unlikely
-    	return new GeoPoint(lat, lon);
-    }
-    
     public void startNavi() {
     	if (!appState.isNavMode()) return;
     	activateGps();
@@ -216,8 +195,7 @@ public class MainApplication extends Application implements LocationListener, On
      */
     public void navigate(double lat, double lon) {
     	try {
-    		appState.setLastLat(lat);
-    		appState.setLastLon(lon);
+    		appState.setLastPos(new GeoPoint(lat, lon));
     		
 			if (appListener != null) {
 				

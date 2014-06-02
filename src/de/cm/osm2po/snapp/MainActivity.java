@@ -11,8 +11,6 @@ import static de.cm.osm2po.snapp.Marker.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.Marker.TARGET_MARKER;
 import static de.cm.osm2po.snapp.Marker.TOUCH_MARKER;
 
-import java.util.Arrays;
-
 import org.mapsforge.android.maps.MapActivity;
 import org.mapsforge.android.maps.MapView;
 import org.mapsforge.core.GeoPoint;
@@ -164,13 +162,13 @@ implements MarkerEditListener, AppListener {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		if (item.getItemId() == R.id.menu_nav_home) {
-			GeoPoint gp1 = app.getLastPosition();
+			GeoPoint gp1 = appState.getLastPos();
 			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
 			if (gp1 != null && gp2 != null) {
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp1);
-				onMarkerSpecified(SOURCE_MARKER); // fake
+				onMarkerAction(SOURCE_MARKER); // fake
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp2);
-				onMarkerSpecified(TARGET_MARKER); // fake
+				onMarkerAction(TARGET_MARKER); // fake
 			}
 
 		}
@@ -195,7 +193,7 @@ implements MarkerEditListener, AppListener {
 	}
 
 	@Override
-	public void onMarkerSpecified(Marker marker) {
+	public void onMarkerAction(Marker marker) {
 		GeoPoint geoPoint = markersLayer.getLastTouchPosition();
 		double lat = geoPoint.getLatitude();
 		double lon = geoPoint.getLongitude();
@@ -237,8 +235,8 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public void onRouteLost() {
-		markersLayer.moveMarker(TOUCH_MARKER, app.getLastPosition());
-		onMarkerSpecified(SOURCE_MARKER); // Fake
+		markersLayer.moveMarker(TOUCH_MARKER, appState.getHomePos());
+		onMarkerAction(SOURCE_MARKER); // Fake
 	}
 
 
@@ -249,9 +247,9 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public void onRouteChanged() {
-		long[] geometry = createGeometry();
-		routesLayer.drawRoute(geometry);
-		if (null == geometry) {
+		SdPath path = appState.getPath();
+		routesLayer.drawPath(path);
+		if (null == path) {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -261,42 +259,14 @@ implements MarkerEditListener, AppListener {
 		}
 		progressDialog.dismiss();
 	}
-
-
-	private long[] createGeometry() {
-		SdPath path = appState.getPath();
-		if (null == path) return null;
-		int nEdges = path.getNumberOfEdges();
-
-		long[] points = new long[1000];
-		int nPoints = 0;
-		// TODO eliminate redundant points at connections
-		for (int e = 0; e < nEdges; e++) {
-			long[] coords = path.fetchGeometry(e);
-
-			for (int j = 0; j < coords.length; j++) {
-				if (nPoints == points.length) // ArrayOverflow
-					points = Arrays.copyOf(points, nPoints * 2);
-
-				points[nPoints++] = coords[j];
-			}
-		}
-		return Arrays.copyOf(points, nPoints);
-	}
 	
 	private void saveViewState() {
 		GeoPoint gpMap = mapView.getMapPosition().getMapCenter();
-		if (gpMap != null) {
-			appState.setMapLat(gpMap.getLatitude());
-			appState.setMapLon(gpMap.getLongitude());
-			appState.setMapZoom(mapView.getMapPosition().getZoomLevel());
-		}
+		appState.setMapPos(gpMap);
 		GeoPoint gpHome = markersLayer.getMarkerPosition(HOME_MARKER);
-		if (gpHome != null) {
-			appState.setHomeLat(gpHome.getLatitude());
-			appState.setHomeLon(gpHome.getLongitude());
-		}
-		
+		appState.setHomePos(gpHome);
+		appState.setMapZoom(mapView.getMapPosition().getZoomLevel());
+
 		app.saveAppState();
 	}
 	
@@ -304,9 +274,9 @@ implements MarkerEditListener, AppListener {
 
 		int zoom = appState.getMapZoom();
 		if (zoom > 0)  mapView.getController().setZoom(zoom);
-		GeoPoint gpMap = app.getMapPosition();
+		GeoPoint gpMap = appState.getMapPos();
 		if (gpMap != null) mapView.setCenter(gpMap);
-		GeoPoint gpHome = app.getHomePosition();
+		GeoPoint gpHome = appState.getHomePos();
 		if (gpHome != null) markersLayer.moveMarker(HOME_MARKER, gpHome);
 
 		tglCarOrBike.setChecked(!appState.isBikeMode());
@@ -326,8 +296,7 @@ implements MarkerEditListener, AppListener {
 			markersLayer.moveMarker(TARGET_MARKER, geoPoint);
 		}
 
-		long[] geometry = createGeometry();
-		routesLayer.drawRoute(geometry);
+		routesLayer.drawPath(appState.getPath());
 	}
 
 

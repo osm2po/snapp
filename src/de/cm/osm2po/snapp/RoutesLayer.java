@@ -1,5 +1,7 @@
 package de.cm.osm2po.snapp;
 
+import java.util.Arrays;
+
 import org.mapsforge.android.maps.overlay.ArrayWayOverlay;
 import org.mapsforge.android.maps.overlay.OverlayWay;
 import org.mapsforge.core.GeoPoint;
@@ -7,6 +9,7 @@ import org.mapsforge.core.GeoPoint;
 import android.graphics.Color;
 import android.graphics.Paint;
 import de.cm.osm2po.sd.routing.SdGeoUtils;
+import de.cm.osm2po.sd.routing.SdPath;
 
 public class RoutesLayer extends ArrayWayOverlay {
 
@@ -42,22 +45,37 @@ public class RoutesLayer extends ArrayWayOverlay {
 		return outline;
 	}
 	
-	public void drawRoute(long[] geometry) {
-		if (overlayWay != null) removeWay(overlayWay);
-		if (null == geometry) return;
+	public void drawPath(SdPath path) {
 		
-    	int n = geometry.length;
-        GeoPoint[] geoPoints = new GeoPoint[n];
-        for (int i = 0; i < n; i++) {
-        	double lat = SdGeoUtils.toLat(geometry[i]);
-        	double lon = SdGeoUtils.toLon(geometry[i]);
-        	geoPoints[i] = new GeoPoint(lat, lon);
-        }
-		
-		GeoPoint[][] geoWays = new GeoPoint[][]{geoPoints};
-		overlayWay = new OverlayWay(geoWays, defaultFillPaint(), defaultOutlinePaint());
-		addWay(overlayWay);
-		requestRedraw();
+		if (overlayWay != null) removeWay(overlayWay); // remove old routes
+
+		if (path != null) {
+			GeoPoint[] geoPoints = new GeoPoint[0x400 /*1k*/];
+			int n = 0; 
+			
+			int nEdges = path.getNumberOfEdges();
+
+			for (int i = 0; i < nEdges; i++) {
+				long[] coords = path.fetchGeometry(i);
+				int nCoords = coords.length;
+				
+				int z = 0 == i ? 0 : 1; 
+				for (int j = z; j < nCoords; j++) {
+					double lat = SdGeoUtils.toLat(coords[j]);
+					double lon = SdGeoUtils.toLon(coords[j]);
+		        	geoPoints[n++] = new GeoPoint(lat, lon);
+		        	if (geoPoints.length == n) { // ArrayOverflowCheck
+		        		geoPoints = Arrays.copyOf(geoPoints, n * 2);
+		        	}
+				}
+			}
+			
+			geoPoints = Arrays.copyOf(geoPoints, n);
+			GeoPoint[][] geoWays = new GeoPoint[][]{geoPoints};
+			overlayWay = new OverlayWay(geoWays, defaultFillPaint(), defaultOutlinePaint());
+			addWay(overlayWay);
+			requestRedraw();
+		}
 	}
 
 }

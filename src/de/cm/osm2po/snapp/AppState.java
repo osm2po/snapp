@@ -1,8 +1,6 @@
 package de.cm.osm2po.snapp;
 
 import static de.cm.osm2po.snapp.MainApplication.getAppDir;
-import static de.cm.osm2po.snapp.Utils.readString;
-import static de.cm.osm2po.snapp.Utils.writeString;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -11,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.mapsforge.core.GeoPoint;
 
 import android.util.Log;
 import de.cm.osm2po.sd.routing.SdGraph;
@@ -25,8 +25,16 @@ import de.cm.osm2po.sd.routing.SdTouchPoint;
 public class AppState {
 
 	private final static String STATE_FILE_NAME = "snapp.state";
-	private static final int STATE_FILE_VERSION = 4;
+	private static final int STATE_FILE_VERSION = 5;
 
+	private final static int FLAG_NULL = 0x0;
+	private final static int FLAG_HAS_MAPPOS = 0x1;
+	private final static int FLAG_HAS_HOMEPOS = 0x2;
+	private final static int FLAG_HAS_LASTPOS = 0x4;
+	private final static int FLAG_HAS_SOURCE = 0x8;
+	private final static int FLAG_HAS_TARGET = 0x10;
+	private final static int FLAG_HAS_PATH = 0x20;
+	
 	private transient boolean restored;
 	
 	private boolean quietMode;
@@ -34,14 +42,11 @@ public class AppState {
 	private boolean panMode;
 	private boolean navMode;
 
-	private double lastLat;
-	private double lastLon;
-	private double homeLat;
-	private double homeLon;
+	private GeoPoint lastPos;
+	private GeoPoint homePos;
+	private GeoPoint mapPos;
 	
 	private int mapZoom;
-	private double mapLat;
-	private double mapLon;
 
 	private SdPath path;
 	private SdTouchPoint source;
@@ -55,26 +60,20 @@ public class AppState {
 	public void setPanMode(boolean panMode) {this.panMode = panMode;}
 	public boolean isNavMode() {return navMode;}
 	public void setNavMode(boolean navMode) {this.navMode = navMode;}
-	public double getLastLat() {return lastLat;}
-	public void setLastLat(double lastLat) {this.lastLat = lastLat;}
-	public double getLastLon() {return lastLon;}
-	public void setLastLon(double lastLon) {this.lastLon = lastLon;}
-	public double getHomeLat() {return homeLat;}
-	public void setHomeLat(double homeLat) {this.homeLat = homeLat;}
-	public double getHomeLon() {return homeLon;}
-	public void setHomeLon(double homeLon) {this.homeLon = homeLon;}
 	public int getMapZoom() {return mapZoom;}
 	public void setMapZoom(int mapZoom) {this.mapZoom = mapZoom;}
-	public double getMapLat() {return mapLat;}
-	public void setMapLat(double mapLat) {this.mapLat = mapLat;}
-	public double getMapLon() {return mapLon;}
-	public void setMapLon(double mapLon) {this.mapLon = mapLon;}
 	public SdPath getPath() {return path;}
 	public void setPath(SdPath path) {this.path = path;}
 	public SdTouchPoint getSource() {return source;}
 	public void setSource(SdTouchPoint source) {this.source = source;}
 	public SdTouchPoint getTarget() {return target;}
 	public void setTarget(SdTouchPoint target) {this.target = target;}
+	public GeoPoint getLastPos() {return lastPos;}
+	public void setLastPos(GeoPoint lastPos) {this.lastPos = lastPos;}
+	public GeoPoint getHomePos() {return homePos;}
+	public void setHomePos(GeoPoint homePos) {this.homePos = homePos;}
+	public GeoPoint getMapPos() {return mapPos;}
+	public void setMapPos(GeoPoint mapPos) {this.mapPos = mapPos;}
 	
 	public boolean isRestored() {return this.restored;}
 
@@ -93,25 +92,48 @@ public class AppState {
 				dis.close(); // FIXME WTF android throws an exception here?
 				return this;
 			}
+			
+			int flags = dis.readInt();
 
 			navMode = dis.readBoolean();
 			panMode = dis.readBoolean();
 			bikeMode = dis.readBoolean();
 			quietMode = dis.readBoolean();
 
-			lastLat = dis.readDouble();
-			lastLon = dis.readDouble();
-			homeLat = dis.readDouble();
-			homeLon = dis.readDouble();
-			mapLat = dis.readDouble();
-			mapLon = dis.readDouble();
-			
 			mapZoom = dis.readInt();
 
-			source = SdTouchPoint.create(graph, readString(dis));
-			target = SdTouchPoint.create(graph, readString(dis));
+			lastPos = null;
+			if ((flags & FLAG_HAS_LASTPOS) != 0) {
+				double lat = dis.readDouble();
+				double lon = dis.readDouble();
+				lastPos = new GeoPoint(lat, lon);
+			}
+			mapPos = null;
+			if ((flags & FLAG_HAS_MAPPOS) != 0) {
+				double lat = dis.readDouble();
+				double lon = dis.readDouble();
+				mapPos = new GeoPoint(lat, lon);
+			}
+			homePos = null;
+			if ((flags & FLAG_HAS_HOMEPOS) != 0) {
+				double lat = dis.readDouble();
+				double lon = dis.readDouble();
+				homePos = new GeoPoint(lat, lon);
+			}
 
-			if (dis.readBoolean()) path = SdPath.load(dis, graph);
+			source = null;
+			if ((flags & FLAG_HAS_SOURCE) != 0) {
+				source = SdTouchPoint.load(dis, graph);
+			}
+			target = null;
+			if ((flags & FLAG_HAS_TARGET) != 0) {
+				target = SdTouchPoint.load(dis, graph);
+			}
+			
+			path = null;
+			if ((flags & FLAG_HAS_PATH) != 0) {
+				path = SdPath.load(dis, graph);
+			}
 			
 			restored = true;
 
@@ -126,6 +148,15 @@ public class AppState {
 
 	public boolean saveAppState (SdGraph graph) {
 		boolean saved = false;
+		int flags = FLAG_NULL;
+
+		if (lastPos != null) flags |= FLAG_HAS_LASTPOS;
+		if (mapPos != null) flags |= FLAG_HAS_MAPPOS;
+		if (homePos != null) flags |= FLAG_HAS_HOMEPOS;
+		if (source != null) flags |= FLAG_HAS_SOURCE;
+		if (target != null) flags |= FLAG_HAS_TARGET;
+		if (path != null) flags |= FLAG_HAS_PATH;
+
 		try {
 			File stateFile = new File(getAppDir(), STATE_FILE_NAME); 
 			
@@ -133,26 +164,36 @@ public class AppState {
 			DataOutputStream dos = new DataOutputStream(os);
 			dos.writeInt(STATE_FILE_VERSION);
 			
+			dos.writeInt(flags);
+			
 			dos.writeBoolean(navMode);
 			dos.writeBoolean(panMode);
 			dos.writeBoolean(bikeMode);
 			dos.writeBoolean(quietMode);
 			
-			dos.writeDouble(lastLat);
-			dos.writeDouble(lastLon);
-
-			dos.writeDouble(homeLat);
-			dos.writeDouble(homeLon);
-			dos.writeDouble(mapLat);
-			dos.writeDouble(mapLon);
-			
 			dos.writeInt(mapZoom);
 
-			writeString(source != null ? source.getKey() : null, dos);
-			writeString(target != null ? target.getKey() : null, dos);
-			
-			dos.writeBoolean(path != null);
-			if (path != null) path.save(dos);
+			if ((flags & FLAG_HAS_LASTPOS) != 0) {
+				dos.writeDouble(lastPos.getLatitude());
+				dos.writeDouble(lastPos.getLongitude());
+			}
+			if ((flags & FLAG_HAS_MAPPOS) != 0) {
+				dos.writeDouble(mapPos.getLatitude());
+				dos.writeDouble(mapPos.getLongitude());
+			}
+			if ((flags & FLAG_HAS_HOMEPOS) != 0) {
+				dos.writeDouble(homePos.getLatitude());
+				dos.writeDouble(homePos.getLongitude());
+			}
+			if ((flags & FLAG_HAS_SOURCE) != 0) {
+				source.save(dos);
+			}
+			if ((flags & FLAG_HAS_TARGET) != 0) {
+				target.save(dos);
+			}
+			if ((flags & FLAG_HAS_PATH) != 0) {
+				path.save(dos);
+			}
 			
 			saved = true;
 			

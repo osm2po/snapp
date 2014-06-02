@@ -4,5 +4,5 @@ import org.mapsforge.core.GeoPoint;
 
 public interface MarkerEditListener {
 	void onPositionRequest(GeoPoint geoPoint);
-	void onMarkerSpecified(Marker marker);
+	void onMarkerAction(Marker marker);
 }

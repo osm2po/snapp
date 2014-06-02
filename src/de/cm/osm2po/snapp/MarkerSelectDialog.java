@@ -51,10 +51,10 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 		if (activity instanceof MarkerEditListener) {
 			MarkerEditListener msl = (MarkerEditListener) activity;
 			switch (v.getId()) {
-			case R.id.btn_source: msl.onMarkerSpecified(SOURCE_MARKER); break;
-			case R.id.btn_target: msl.onMarkerSpecified(TARGET_MARKER); break;
-			case R.id.btn_gps_simu: msl.onMarkerSpecified(GPS_MARKER); break;
-			case R.id.btn_home: msl.onMarkerSpecified(HOME_MARKER); break;
+			case R.id.btn_source: msl.onMarkerAction(SOURCE_MARKER); break;
+			case R.id.btn_target: msl.onMarkerAction(TARGET_MARKER); break;
+			case R.id.btn_gps_simu: msl.onMarkerAction(GPS_MARKER); break;
+			case R.id.btn_home: msl.onMarkerAction(HOME_MARKER); break;
 			}
 		}
 	}
