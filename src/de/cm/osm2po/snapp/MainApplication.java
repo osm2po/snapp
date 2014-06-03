@@ -88,7 +88,7 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     protected boolean saveAppState() {
-    	return appState.saveAppState(graph);
+    	return appState.saveAppState(graph.getId());
     }
 
     private void registerTracks() {
@@ -154,13 +154,7 @@ public class MainApplication extends Application implements LocationListener, On
     	routingThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					calculateRoute();
-					if (appListener != null) {
-						appListener.onRouteChanged();
-					}
-				} catch (Exception e) {
-				}
+				try {calculateRoute();} catch (Exception e) {}
 			}
 		});
     	
@@ -174,6 +168,7 @@ public class MainApplication extends Application implements LocationListener, On
 				appState.getSource(), appState.getTarget(), 0, 1.1, !bikeMode, !bikeMode);
 		appState.setPath(path);
 		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
+		if (appListener != null) appListener.onRouteChanged();
     }
     
     public boolean isGuiding() {

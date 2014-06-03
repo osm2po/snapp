@@ -1,7 +1,7 @@
 package de.cm.osm2po.snapp;
 
-import static de.cm.osm2po.snapp.Marker.GPS_MARKER;
 import static de.cm.osm2po.snapp.Marker.HOME_MARKER;
+import static de.cm.osm2po.snapp.Marker.POS_MARKER;
 import static de.cm.osm2po.snapp.Marker.SOURCE_MARKER;
 import static de.cm.osm2po.snapp.Marker.TARGET_MARKER;
 import android.app.Activity;
@@ -29,7 +29,7 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 		btnSource.setOnClickListener(this);
 		ImageButton btnTarget = (ImageButton) view.findViewById(R.id.btn_target);
 		btnTarget.setOnClickListener(this);
-		ImageButton btnGpsSimu = (ImageButton) view.findViewById(R.id.btn_gps_simu);
+		ImageButton btnGpsSimu = (ImageButton) view.findViewById(R.id.btn_pos);
 		btnGpsSimu.setOnClickListener(this);
 		ImageButton btnHome = (ImageButton) view.findViewById(R.id.btn_home);
 		btnHome.setOnClickListener(this);
@@ -53,7 +53,7 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 			switch (v.getId()) {
 			case R.id.btn_source: msl.onMarkerAction(SOURCE_MARKER); break;
 			case R.id.btn_target: msl.onMarkerAction(TARGET_MARKER); break;
-			case R.id.btn_gps_simu: msl.onMarkerAction(GPS_MARKER); break;
+			case R.id.btn_pos: msl.onMarkerAction(POS_MARKER); break;
 			case R.id.btn_home: msl.onMarkerAction(HOME_MARKER); break;
 			}
 		}

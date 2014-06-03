@@ -25,7 +25,7 @@ import de.cm.osm2po.sd.routing.SdTouchPoint;
 public class AppState {
 
 	private final static String STATE_FILE_NAME = "snapp.state";
-	private static final int STATE_FILE_VERSION = 6;
+	private static final int STATE_FILE_VERSION = 7;
 
 	private final static int FLAG_NULL = 0x0;
 	private final static int FLAG_HAS_MAPPOS = 0x1;
@@ -126,11 +126,11 @@ public class AppState {
 
 			source = null;
 			if ((flags & FLAG_HAS_SOURCE) != 0) {
-				source = SdTouchPoint.load(dis, graph);
+				source = SdTouchPoint.load(dis);
 			}
 			target = null;
 			if ((flags & FLAG_HAS_TARGET) != 0) {
-				target = SdTouchPoint.load(dis, graph);
+				target = SdTouchPoint.load(dis);
 			}
 			
 			path = null;
@@ -149,7 +149,7 @@ public class AppState {
 		return this;
 	}
 
-	public boolean saveAppState (SdGraph graph) {
+	public boolean saveAppState(int graphId) {
 		boolean saved = false;
 		int flags = FLAG_NULL;
 
@@ -166,7 +166,7 @@ public class AppState {
 			OutputStream os = new FileOutputStream(stateFile);
 			DataOutputStream dos = new DataOutputStream(os);
 			dos.writeInt(STATE_FILE_VERSION);
-			dos.writeInt(graph.getId());
+			dos.writeInt(graphId);
 			
 			dos.writeInt(flags);
 			

@@ -200,7 +200,7 @@ implements MarkerEditListener, AppListener {
 		double lat = geoPoint.getLatitude();
 		double lon = geoPoint.getLongitude();
 
-		if (GPS_MARKER == marker) {
+		if (POS_MARKER == marker) {
 			app.navigate(lat, lon); // Simulation
 			return;
 		}
@@ -322,7 +322,7 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public void onPositionRequest(GeoPoint geoPoint) {
-		if (!tglNaviOrEdit.isChecked()) {
+		if (!appState.isNavMode()) {
 			markerSelectDialog.show(getFragmentManager(), "dlg_marker");
 		}
 	}
