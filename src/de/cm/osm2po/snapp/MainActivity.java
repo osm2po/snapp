@@ -151,6 +151,8 @@ implements MarkerEditListener, AppListener {
 		tglToneOrQuiet.setChecked(!appState.isQuietMode());
 		tglNaviOrEdit.setChecked(appState.isNavMode());
 		tglPanOrHold.setChecked(appState.isPanMode());
+		
+		txtAddress.setVisibility(appState.isNavMode() ? INVISIBLE : VISIBLE);
 	}
 
 	@Override
@@ -235,7 +237,7 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public void onRouteLost() {
-		markersLayer.moveMarker(TOUCH_MARKER, appState.getHomePos());
+		markersLayer.moveMarker(TOUCH_MARKER, appState.getLastPos()); // fake
 		onMarkerAction(SOURCE_MARKER); // Fake
 	}
 

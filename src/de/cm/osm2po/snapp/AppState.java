@@ -25,7 +25,7 @@ import de.cm.osm2po.sd.routing.SdTouchPoint;
 public class AppState {
 
 	private final static String STATE_FILE_NAME = "snapp.state";
-	private static final int STATE_FILE_VERSION = 5;
+	private static final int STATE_FILE_VERSION = 6;
 
 	private final static int FLAG_NULL = 0x0;
 	private final static int FLAG_HAS_MAPPOS = 0x1;
@@ -87,8 +87,11 @@ public class AppState {
 			InputStream is = new FileInputStream(stateFile);
 			DataInputStream dis = new DataInputStream(is);
 
-			int saveInstanceVersion = dis.readInt();
-			if (saveInstanceVersion != STATE_FILE_VERSION) {
+			// Read compatibility infos
+			int stateFileVersion = dis.readInt();
+			int graphId = dis.readInt();
+			
+			if (stateFileVersion != STATE_FILE_VERSION || graphId != graph.getId()) {
 				dis.close(); // FIXME WTF android throws an exception here?
 				return this;
 			}
@@ -163,6 +166,7 @@ public class AppState {
 			OutputStream os = new FileOutputStream(stateFile);
 			DataOutputStream dos = new DataOutputStream(os);
 			dos.writeInt(STATE_FILE_VERSION);
+			dos.writeInt(graph.getId());
 			
 			dos.writeInt(flags);
 			
