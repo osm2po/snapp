@@ -9,6 +9,7 @@ import org.mapsforge.core.GeoPoint;
 import android.graphics.Color;
 import android.graphics.Paint;
 import de.cm.osm2po.sd.routing.SdGeoUtils;
+import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 
 public class RoutesLayer extends ArrayWayOverlay {
@@ -45,7 +46,7 @@ public class RoutesLayer extends ArrayWayOverlay {
 		return outline;
 	}
 	
-	public void drawPath(SdPath path) {
+	public void drawPath(SdGraph graph, SdPath path) {
 		
 		if (overlayWay != null) removeWay(overlayWay); // remove old routes
 
@@ -56,7 +57,7 @@ public class RoutesLayer extends ArrayWayOverlay {
 			int nEdges = path.getNumberOfEdges();
 
 			for (int i = 0; i < nEdges; i++) {
-				long[] coords = path.fetchGeometry(i);
+				long[] coords = path.fetchGeometry(graph, i);
 				int nCoords = coords.length;
 				
 				int z = 0 == i ? 0 : 1; 

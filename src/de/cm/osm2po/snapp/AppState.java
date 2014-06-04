@@ -13,7 +13,6 @@ import java.io.OutputStream;
 import org.mapsforge.core.GeoPoint;
 
 import android.util.Log;
-import de.cm.osm2po.sd.routing.SdGraph;
 import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdTouchPoint;
 
@@ -77,7 +76,7 @@ public class AppState {
 	
 	public boolean isRestored() {return this.restored;}
 
-	public AppState restoreAppState(SdGraph graph) {
+	public AppState restoreAppState(int graphId) {
 		try {
 			restored = false;
 			
@@ -89,9 +88,9 @@ public class AppState {
 
 			// Read compatibility infos
 			int stateFileVersion = dis.readInt();
-			int graphId = dis.readInt();
+			int readGraphId = dis.readInt();
 			
-			if (stateFileVersion != STATE_FILE_VERSION || graphId != graph.getId()) {
+			if (stateFileVersion != STATE_FILE_VERSION || graphId != readGraphId) {
 				dis.close(); // FIXME WTF android throws an exception here?
 				return this;
 			}
@@ -135,7 +134,7 @@ public class AppState {
 			
 			path = null;
 			if ((flags & FLAG_HAS_PATH) != 0) {
-				path = SdPath.load(dis, graph);
+				path = SdPath.load(dis);
 			}
 			
 			restored = true;

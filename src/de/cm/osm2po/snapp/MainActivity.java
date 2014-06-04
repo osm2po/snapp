@@ -111,7 +111,6 @@ implements MarkerEditListener, AppListener {
 			}
 		});
 
-
 		mapView = (MapView) findViewById(R.id.mapView);
 		mapView.setClickable(true);
 		mapView.setBuiltInZoomControls(true);
@@ -167,6 +166,7 @@ implements MarkerEditListener, AppListener {
 			GeoPoint gp1 = appState.getLastPos();
 			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
 			if (gp1 != null && gp2 != null) {
+				appState.setTarget(null);
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp1);
 				onMarkerAction(SOURCE_MARKER); // fake
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp2);
@@ -250,7 +250,7 @@ implements MarkerEditListener, AppListener {
 	@Override
 	public void onRouteChanged() {
 		SdPath path = appState.getPath();
-		routesLayer.drawPath(path);
+		routesLayer.drawPath(app.getGraph(), path);
 		if (null == path) {
 			runOnUiThread(new Runnable() {
 				@Override
@@ -298,7 +298,7 @@ implements MarkerEditListener, AppListener {
 			markersLayer.moveMarker(TARGET_MARKER, geoPoint);
 		}
 
-		routesLayer.drawPath(appState.getPath());
+		routesLayer.drawPath(app.getGraph(), appState.getPath());
 	}
 
 

@@ -64,11 +64,12 @@ public class MainApplication extends Application implements LocationListener, On
 
     	graph = new SdGraph(new File(getAppDir(), "snapp.gpt"));
     	mapFile = new File(getAppDir(), "snapp.map");
-    	appState = new AppState().restoreAppState(graph);
+    	appState = new AppState().restoreAppState(graph.getId());
     	router = new SdRouter(graph, pathCacheFile);
 
     	SdPath path = appState.getPath();
-		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
+		guide = (null == path) ? null : new SdGuide(
+				SdForecast.create(SdEvent.create(graph, path)));
     	
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
@@ -167,7 +168,8 @@ public class MainApplication extends Application implements LocationListener, On
 		SdPath path = router.findPath(
 				appState.getSource(), appState.getTarget(), 0, 1.1, !bikeMode, !bikeMode);
 		appState.setPath(path);
-		guide = (null == path) ? null : new SdGuide(SdForecast.create(SdEvent.create(path)));
+		guide = (null == path) ? null : new SdGuide(
+				SdForecast.create(SdEvent.create(graph, path)));
 		if (appListener != null) appListener.onRouteChanged();
     }
     
@@ -198,7 +200,7 @@ public class MainApplication extends Application implements LocationListener, On
 				isNavigateBusy = true;
 
 				if (guide != null) {
-					SdLocation loc = SdLocation.snap(appState.getPath(), lat, lon);
+					SdLocation loc = SdLocation.snap(graph, appState.getPath(), lat, lon);
 	                if (loc.getJitter() < 50) {
 	                	nJitters = 0;
 
