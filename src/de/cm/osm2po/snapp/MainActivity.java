@@ -55,6 +55,8 @@ implements MarkerEditListener, AppListener {
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		toast("Starting Activity");
 
 		progressDialog = new ProgressDialog(this, R.style.StyledDialog);
 		progressDialog.setMessage("Calculating Route...");
@@ -200,7 +202,8 @@ implements MarkerEditListener, AppListener {
 		double lat = geoPoint.getLatitude();
 		double lon = geoPoint.getLongitude();
 
-		if (POS_MARKER == marker) {
+		if (GPS_MARKER == marker) {
+			markersLayer.moveMarker(GPS_MARKER, geoPoint);
 			app.navigate(lat, lon); // Simulation
 			return;
 		}

@@ -91,7 +91,7 @@ public class AppState {
 			int readGraphId = dis.readInt();
 			
 			if (stateFileVersion != STATE_FILE_VERSION || graphId != readGraphId) {
-				dis.close(); // FIXME WTF android throws an exception here?
+				dis.close(); // FIXME WTF why does android throw an exception here?
 				return this;
 			}
 			
@@ -139,7 +139,7 @@ public class AppState {
 			
 			restored = true;
 
-			dis.close(); // FIXME WTF android throws an exception here?
+			dis.close(); // FIXME WTF why does android throw an exception here?
 
 		} catch (Throwable t) {
 			Log.e(getClass().getName(), t.toString());
@@ -200,10 +200,8 @@ public class AppState {
 			
 			saved = true;
 			
-			dos.close(); // FIXME WTF android throws an exception here?
+			dos.close(); // FIXME WTF why does android throw an exception here?
 			
-			return true;
-
 		} catch (Throwable t) {
 			Log.e(getClass().getName(), t.toString());
 		}

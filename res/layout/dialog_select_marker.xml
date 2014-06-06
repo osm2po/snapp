@@ -26,10 +26,10 @@
         android:src="@drawable/ic_home32" />
 
     <ImageButton
-        android:id="@+id/btn_pos"
+        android:id="@+id/btn_gps_simu"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:src="@drawable/ic_pos32" />
+        android:src="@drawable/ic_gps32" />
     
 </LinearLayout>
 
