@@ -4,6 +4,8 @@ import static android.speech.tts.TextToSpeech.QUEUE_ADD;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_LOST;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_INF_ROUTE_CALC;
 
+import static android.telephony.TelephonyManager.*;
+
 import java.io.File;
 import java.util.List;
 
@@ -22,6 +24,8 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.widget.Toast;
 import de.cm.osm2po.sd.guide.SdEvent;
 import de.cm.osm2po.sd.guide.SdForecast;
@@ -76,7 +80,12 @@ public class MainApplication extends Application implements LocationListener, On
 
     	tts = new TextToSpeech(this, this);
     	registerTracks();
-    	
+
+    	TelephonyManager tm = (TelephonyManager) getApplicationContext()
+    			.getSystemService(Context.TELEPHONY_SERVICE);
+        int events = PhoneStateListener.LISTEN_CALL_STATE;
+        tm.listen(new PhoneListener(), events);
+        
     	startNavi();
     }
     
@@ -300,6 +309,30 @@ public class MainApplication extends Application implements LocationListener, On
 	private String toast(String msg) {
 		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 		return msg;
+	}
+	
+	/*********************** Phone observer *******************************/
+	
+	private class PhoneListener extends PhoneStateListener {
+		private boolean restoreTone;
+		@Override
+		public void onCallStateChanged(int state, String incomingNumber) {
+			switch (state) {
+			case CALL_STATE_RINGING:
+				speak("Telefon " + incomingNumber);
+				break;
+			case CALL_STATE_OFFHOOK:
+				appState.saveAppState(graph.getId());
+				restoreTone = !isQuietMode();
+				setQuietMode(true);
+				break;
+			case CALL_STATE_IDLE:
+				if (restoreTone) setQuietMode(false);
+				restoreTone = false;
+				break;
+			} 
+		}
+		
 	}
 
 }

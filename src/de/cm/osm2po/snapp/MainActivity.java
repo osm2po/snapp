@@ -145,15 +145,19 @@ implements MarkerEditListener, AppListener {
 	}
 
 	@Override
-	protected void onResume() {
-		super.onResume();
-
+	public void onModeChanged() {
 		tglCarOrBike.setChecked(!appState.isBikeMode());
 		tglToneOrQuiet.setChecked(!appState.isQuietMode());
 		tglNaviOrEdit.setChecked(appState.isNavMode());
 		tglPanOrHold.setChecked(appState.isPanMode());
 		
 		txtAddress.setVisibility(appState.isNavMode() ? INVISIBLE : VISIBLE);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		onModeChanged();
 	}
 
 	@Override
