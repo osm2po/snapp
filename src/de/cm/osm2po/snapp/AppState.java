@@ -24,7 +24,7 @@ import de.cm.osm2po.sd.routing.SdTouchPoint;
 public class AppState {
 
 	private final static String STATE_FILE_NAME = "snapp.state";
-	private static final int STATE_FILE_VERSION = 7;
+	private static final int STATE_FILE_VERSION = 8;
 
 	private final static int FLAG_NULL = 0x0;
 	private final static int FLAG_HAS_MAPPOS = 0x1;
