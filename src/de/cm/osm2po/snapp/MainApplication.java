@@ -340,9 +340,10 @@ public class MainApplication extends Application implements LocationListener, On
 	}
 	
 	/*********************** SMS-GeoPosition-Sender *****************************/
-	
+
 	public void smsGeoPosition(String mobileNumber) {
 		GeoPoint gp = appState.getLastPos();
+		
 		if (gp != null) {
 			String smsMsg = "snapp:geo:" + gp.getLatitude() + "," + gp.getLongitude();
 			smsMan.sendTextMessage(mobileNumber, null, smsMsg, null, null);

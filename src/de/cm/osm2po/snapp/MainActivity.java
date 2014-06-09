@@ -16,8 +16,12 @@ import org.mapsforge.android.maps.MapView;
 import org.mapsforge.core.GeoPoint;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,6 +39,8 @@ import de.cm.osm2po.sd.routing.SdTouchPoint;
 public class MainActivity extends MapActivity
 implements MarkerEditListener, AppListener {
 
+	private final static int CONTACT_SELECTED = 4711;
+	
 	private MainApplication app;
 	private AppState appState;
 	private MapView mapView;
@@ -188,11 +194,48 @@ implements MarkerEditListener, AppListener {
 				onMarkerAction(TARGET_MARKER); // fake
 			}
 			break;
+			
 		case R.id.menu_sms_pos:
-			app.smsGeoPosition("+49 163 7600600");
+		    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+		    intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+		    startActivityForResult(intent, CONTACT_SELECTED);
+		    break;
 		}
 		
 		return true;
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (CONTACT_SELECTED == requestCode && resultCode != 0) {
+		    if (data != null) {
+		        Uri uri = data.getData();
+
+		        if (uri != null) {
+		            Cursor c = null;
+		            try {
+		                c = getContentResolver().query(uri, new String[]{ 
+		                            ContactsContract.CommonDataKinds.Phone.NUMBER,  
+		                            ContactsContract.CommonDataKinds.Phone.TYPE },
+		                        null, null, null);
+
+		                if (c != null && c.moveToFirst()) {
+		                    String number = c.getString(0);
+		                    //int type = c.getInt(1);
+		                    toast("Position sent to " + number);
+		                    app.smsGeoPosition(number);
+		                }
+		            } finally {
+		                if (c != null) {
+		                    c.close();
+		                }
+		            }
+		        }
+		    }
+			
+			
+			
+		}
 	}
 
 	@Override
@@ -210,6 +253,13 @@ implements MarkerEditListener, AppListener {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		lblSpeed.setText(app.getKmh() + " km/h");
 		markersLayer.moveMarker(POS_MARKER, geoPoint, bearing);
+	}
+
+	@Override
+	public void onPositionRequest(GeoPoint geoPoint) {
+		if (!appState.isNavMode()) {
+			markerSelectDialog.show(getFragmentManager(), "dlg_marker");
+		}
 	}
 
 	@Override
@@ -337,13 +387,6 @@ implements MarkerEditListener, AppListener {
 			toast(e.getMessage());
 		}
 		return false;
-	}
-
-	@Override
-	public void onPositionRequest(GeoPoint geoPoint) {
-		if (!appState.isNavMode()) {
-			markerSelectDialog.show(getFragmentManager(), "dlg_marker");
-		}
 	}
 
 }
