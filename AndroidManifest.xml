@@ -11,29 +11,37 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <!-- 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-     -->
             
     <application
-        android:name="de.cm.osm2po.snapp.MainApplication"
+        android:name=".MainApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        
         <activity
-            android:name="de.cm.osm2po.snapp.MainActivity"
+            android:name=".MainActivity"
             android:alwaysRetainTaskState="true"
             android:screenOrientation="portrait"
             android:configChanges="orientation"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+	    <receiver android:name=".SmsReceiver">
+		     <intent-filter>
+		         <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+		     </intent-filter>
+	    </receiver>
+    
     </application>
+    
 
 </manifest>
