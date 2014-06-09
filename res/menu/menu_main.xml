@@ -2,7 +2,12 @@
 
     <item
         android:id="@+id/menu_nav_home"
-        android:orderInCategory="2"
+        android:orderInCategory="1"
         android:title="@string/menu_nav_home"/>
+
+    <item
+        android:id="@+id/menu_sms_pos"
+        android:orderInCategory="2"
+        android:title="@string/menu_sms_pos"/>
     
 </menu>

@@ -1,10 +1,11 @@
 package de.cm.osm2po.snapp;
 
 import static android.speech.tts.TextToSpeech.QUEUE_ADD;
+import static android.telephony.TelephonyManager.CALL_STATE_IDLE;
+import static android.telephony.TelephonyManager.CALL_STATE_OFFHOOK;
+import static android.telephony.TelephonyManager.CALL_STATE_RINGING;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_LOST;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_INF_ROUTE_CALC;
-
-import static android.telephony.TelephonyManager.*;
 
 import java.io.File;
 import java.util.List;
@@ -25,6 +26,7 @@ import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.telephony.PhoneStateListener;
+import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 import android.widget.Toast;
 import de.cm.osm2po.sd.guide.SdEvent;
@@ -38,6 +40,8 @@ import de.cm.osm2po.sd.routing.SdPath;
 import de.cm.osm2po.sd.routing.SdRouter;
 
 public class MainApplication extends Application implements LocationListener, OnInitListener {
+	
+	private final SmsManager smsMan = SmsManager.getDefault();
 
 	private LocationManager gps;
 	private TextToSpeech tts;
@@ -334,5 +338,18 @@ public class MainApplication extends Application implements LocationListener, On
 		}
 		
 	}
+	
+	/*********************** SMS-GeoPosition-Sender *****************************/
+	
+	public void smsGeoPosition(String mobileNumber) {
+		GeoPoint gp = appState.getLastPos();
+		if (gp != null) {
+			String smsMsg = "snapp:geo:" + gp.getLatitude() + "," + gp.getLongitude();
+			smsMan.sendTextMessage(mobileNumber, null, smsMsg, null, null);
+		} else {
+			toast("No current Position to send via SMS");
+		}
+	}
+	
 
 }

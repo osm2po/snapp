@@ -2,7 +2,9 @@
 <resources>
 
     <string name="app_name">Snapp</string>
+    
     <string name="menu_nav_home">Navigate Home</string>
+    <string name="menu_sms_pos">SMS Position</string>
     
     <string name="btn_source">Source</string>
     <string name="btn_target">Target</string>

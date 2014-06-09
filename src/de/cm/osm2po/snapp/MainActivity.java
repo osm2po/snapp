@@ -130,6 +130,14 @@ implements MarkerEditListener, AppListener {
 		app.setAppListener(this);
 		
 		restoreViewState();
+		
+		Bundle extras = getIntent().getExtras();
+		if (extras != null) {
+			String gp = (String) extras.get("snapp:geo");
+			if (gp != null) {
+				toast(gp);
+			}
+		}
 	}
 
 	@Override
@@ -168,7 +176,8 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
-		if (item.getItemId() == R.id.menu_nav_home) {
+		switch (item.getItemId()) {
+		case R.id.menu_nav_home:
 			GeoPoint gp1 = appState.getLastPos();
 			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
 			if (gp1 != null && gp2 != null) {
@@ -178,8 +187,11 @@ implements MarkerEditListener, AppListener {
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp2);
 				onMarkerAction(TARGET_MARKER); // fake
 			}
-
+			break;
+		case R.id.menu_sms_pos:
+			app.smsGeoPosition("+49 163 7600600");
 		}
+		
 		return true;
 	}
 
