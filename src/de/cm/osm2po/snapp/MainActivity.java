@@ -4,6 +4,7 @@ import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_POINT_FIND;
 import static de.cm.osm2po.sd.guide.SdMessageResource.MSG_ERR_ROUTE_CALC;
+import static de.cm.osm2po.snapp.Marker.ALERT_MARKER;
 import static de.cm.osm2po.snapp.Marker.GPS_MARKER;
 import static de.cm.osm2po.snapp.Marker.HOME_MARKER;
 import static de.cm.osm2po.snapp.Marker.POS_MARKER;
@@ -139,9 +140,13 @@ implements MarkerEditListener, AppListener {
 		
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
-			String gp = (String) extras.get("snapp:geo");
-			if (gp != null) {
-				toast(gp);
+			String msg = (String) extras.get("sms_msg");
+			String num = (String) extras.get("sms_num");
+			Double lat = (Double) extras.get("sms_lat");
+			Double lon = (Double) extras.get("sms_lon");
+			if (msg != null && num != null && lat != null && lon != null) {
+				toast(num + ":" + msg + "@" + lat + "," + lon);
+				markersLayer.moveMarker(ALERT_MARKER, new GeoPoint(lat, lon));
 			}
 		}
 	}
@@ -196,6 +201,7 @@ implements MarkerEditListener, AppListener {
 			break;
 			
 		case R.id.menu_sms_pos:
+// TODO this code is not optimal
 //			this syntax has been taken from my book but doesnt work in callback
 //		    Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
 //		    startActivityForResult(intent, CONTACT_SELECTED);
@@ -210,35 +216,6 @@ implements MarkerEditListener, AppListener {
 		return true;
 	}
 	
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (CONTACT_SELECTED == requestCode && resultCode != 0) {
-		    if (data != null) {
-		        Uri uri = data.getData();
-
-		        if (uri != null) {
-		            Cursor c = null;
-		            try {
-		                c = getContentResolver().query(uri, new String[]{ 
-		                            ContactsContract.CommonDataKinds.Phone.NUMBER,  
-		                            ContactsContract.CommonDataKinds.Phone.TYPE },
-		                        null, null, null);
-
-		                if (c != null && c.moveToFirst()) {
-		                    String number = c.getString(0);
-		                    //int type = c.getInt(1);
-		                    toast("Position sent to " + number);
-		                    app.smsGeoPosition(number);
-		                }
-		            } finally {
-		                if (c != null) {
-		                    c.close();
-		                }
-		            }
-		        }
-		    }
-		}
-	}
 
 	@Override
 	public void onGpsSignal(double lat, double lon, float bearing) {
@@ -394,5 +371,37 @@ implements MarkerEditListener, AppListener {
 		}
 		return false;
 	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// TODO this code is not optimal
+		if (CONTACT_SELECTED == requestCode && resultCode != 0) {
+		    if (data != null) {
+		        Uri uri = data.getData();
+
+		        if (uri != null) {
+		            Cursor c = null;
+		            try {
+		                c = getContentResolver().query(uri, new String[]{ 
+		                            ContactsContract.CommonDataKinds.Phone.NUMBER,  
+		                            ContactsContract.CommonDataKinds.Phone.TYPE },
+		                        null, null, null);
+
+		                if (c != null && c.moveToFirst()) {
+		                    String number = c.getString(0);
+		                    //int type = c.getInt(1);
+		                    toast("Position sent to " + number);
+		                    app.smsGeoPosition(number);
+		                }
+		            } finally {
+		                if (c != null) {
+		                    c.close();
+		                }
+		            }
+		        }
+		    }
+		}
+	}
+
 
 }

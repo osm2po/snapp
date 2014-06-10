@@ -1,5 +1,8 @@
 package de.cm.osm2po.snapp;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -9,6 +12,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.util.Log;
+import android.widget.Toast;
 
 public class SmsReceiver extends BroadcastReceiver {
 
@@ -26,23 +30,42 @@ public class SmsReceiver extends BroadcastReceiver {
 
 					String senderNum = phoneNumber;
 					String message = currentMessage.getDisplayMessageBody();
+					double latitude = 53.5;
+					double longitude = 10.1;
+					
+					// parse location
+					Pattern pattern = Pattern.compile("(.*)(geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)");
+					Matcher matcher = pattern.matcher(message);
+					if (!matcher.matches()) return;
+					try { 
+						String[] latlon = matcher.group(2).split(",");
+						latitude = Double.parseDouble(latlon[0]);
+						longitude = Double.parseDouble(latlon[1]);
+						
+					} catch (Exception e) {
+						Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
+						return;
+					}
 
+					// Create Intent to start activivity
 					final Intent startIntent = new Intent(context, MainActivity.class);
-					startIntent.putExtra("snapp:geo", message + ";" + senderNum);
+					startIntent.putExtra("sms_msg", message);
+					startIntent.putExtra("sms_num", senderNum);
+					startIntent.putExtra("sms_lat", latitude);
+					startIntent.putExtra("sms_lon", longitude);
+					
 					// a must in this context
 					startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					// prevent multi instances of already running activity
 					startIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 					
-					
+					// Wrap Intent in a notification with PendingIntent
 					final NotificationManager notificationManager =	(NotificationManager)
 							context.getSystemService(Context.NOTIFICATION_SERVICE);
 					final Notification notification = new Notification(
-							R.drawable.ic_helpme48, "Accident", System.currentTimeMillis());
-					
+							R.drawable.ic_alert48, "Location Alert", System.currentTimeMillis());
 					final PendingIntent pendingIntent = PendingIntent.getActivity(context, senderNum.hashCode(), startIntent, 0);
 					notification.setLatestEventInfo(context, "Accident", message, pendingIntent);
-					
 					notificationManager.notify(senderNum.hashCode(), notification);
 					
 //					context.startActivity(startIntent);
@@ -52,7 +75,6 @@ public class SmsReceiver extends BroadcastReceiver {
 
 		} catch (Exception e) {
 			Log.e("SmsReceiver", "Exception smsReceiver" +e);
-
 		}		
 	}
 

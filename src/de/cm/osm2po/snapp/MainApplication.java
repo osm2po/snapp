@@ -345,7 +345,7 @@ public class MainApplication extends Application implements LocationListener, On
 		GeoPoint gp = appState.getGpsPos();
 		
 		if (gp != null) {
-			String smsMsg = "snapp:geo:" + gp.getLatitude() + "," + gp.getLongitude();
+			String smsMsg = "geo:" + gp.getLatitude() + "," + gp.getLongitude();
 			smsMan.sendTextMessage(mobileNumber, null, smsMsg, null, null);
 		} else {
 			toast("No current Position to send via SMS");
