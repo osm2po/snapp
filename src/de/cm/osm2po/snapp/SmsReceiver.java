@@ -34,13 +34,13 @@ public class SmsReceiver extends BroadcastReceiver {
 					double longitude = 10.1;
 					
 					// parse location
-					Pattern pattern = Pattern.compile("(.*)(geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)");
+					// FIXME Handle multiline message
+					Pattern pattern = Pattern.compile("(.*)(geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)", Pattern.MULTILINE);
 					Matcher matcher = pattern.matcher(message);
 					if (!matcher.matches()) return;
 					try { 
-						String[] latlon = matcher.group(2).split(",");
-						latitude = Double.parseDouble(latlon[0]);
-						longitude = Double.parseDouble(latlon[1]);
+						latitude = Double.parseDouble(matcher.group(3));
+						longitude = Double.parseDouble(matcher.group(4));
 						
 					} catch (Exception e) {
 						Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
@@ -64,9 +64,9 @@ public class SmsReceiver extends BroadcastReceiver {
 							context.getSystemService(Context.NOTIFICATION_SERVICE);
 					final Notification notification = new Notification(
 							R.drawable.ic_alert48, "Location Alert", System.currentTimeMillis());
-					final PendingIntent pendingIntent = PendingIntent.getActivity(context, senderNum.hashCode(), startIntent, 0);
-					notification.setLatestEventInfo(context, "Accident", message, pendingIntent);
-					notificationManager.notify(senderNum.hashCode(), notification);
+					final PendingIntent pendingIntent = PendingIntent.getActivity(context, message.hashCode(), startIntent, 0);
+					notification.setLatestEventInfo(context, "Alert", message, pendingIntent);
+					notificationManager.notify(message.hashCode(), notification);
 					
 //					context.startActivity(startIntent);
 				}

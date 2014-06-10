@@ -145,7 +145,7 @@ implements MarkerEditListener, AppListener {
 			Double lat = (Double) extras.get("sms_lat");
 			Double lon = (Double) extras.get("sms_lon");
 			if (msg != null && num != null && lat != null && lon != null) {
-				toast(num + ":" + msg + "@" + lat + "," + lon);
+				toast("Alert from " + num + ":" + msg + "@" + lat + "," + lon);
 				markersLayer.moveMarker(ALERT_MARKER, new GeoPoint(lat, lon));
 			}
 		}
