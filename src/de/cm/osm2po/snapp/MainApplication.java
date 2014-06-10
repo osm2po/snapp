@@ -205,7 +205,7 @@ public class MainApplication extends Application implements LocationListener, On
      */
     public void navigate(double lat, double lon) {
     	try {
-    		appState.setLastPos(new GeoPoint(lat, lon));
+    		appState.setGpsPos(new GeoPoint(lat, lon));
     		
 			if (appListener != null) {
 				
@@ -342,7 +342,7 @@ public class MainApplication extends Application implements LocationListener, On
 	/*********************** SMS-GeoPosition-Sender *****************************/
 
 	public void smsGeoPosition(String mobileNumber) {
-		GeoPoint gp = appState.getLastPos();
+		GeoPoint gp = appState.getGpsPos();
 		
 		if (gp != null) {
 			String smsMsg = "snapp:geo:" + gp.getLatitude() + "," + gp.getLongitude();

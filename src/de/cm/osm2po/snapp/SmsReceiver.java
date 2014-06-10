@@ -1,5 +1,8 @@
 package de.cm.osm2po.snapp;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -24,13 +27,25 @@ public class SmsReceiver extends BroadcastReceiver {
 					String senderNum = phoneNumber;
 					String message = currentMessage.getDisplayMessageBody();
 
-					final Intent activity = new Intent(context, MainActivity.class);
-					activity.putExtra("snapp:geo", message + ";" + senderNum);
+					final Intent startIntent = new Intent(context, MainActivity.class);
+					startIntent.putExtra("snapp:geo", message + ";" + senderNum);
 					// a must in this context
-					activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					// prevent multi instances of already running activity
-					activity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-					context.startActivity(activity);
+					startIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					
+					
+					final NotificationManager notificationManager =	(NotificationManager)
+							context.getSystemService(Context.NOTIFICATION_SERVICE);
+					final Notification notification = new Notification(
+							R.drawable.ic_helpme48, "Accident", System.currentTimeMillis());
+					
+					final PendingIntent pendingIntent = PendingIntent.getActivity(context, senderNum.hashCode(), startIntent, 0);
+					notification.setLatestEventInfo(context, "Accident", message, pendingIntent);
+					
+					notificationManager.notify(senderNum.hashCode(), notification);
+					
+//					context.startActivity(startIntent);
 				}
 				
 			}

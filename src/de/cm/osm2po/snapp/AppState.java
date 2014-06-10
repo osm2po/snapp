@@ -24,12 +24,12 @@ import de.cm.osm2po.sd.routing.SdTouchPoint;
 public class AppState {
 
 	private final static String STATE_FILE_NAME = "snapp.state";
-	private static final int STATE_FILE_VERSION = 9;
+	private static final int STATE_FILE_VERSION = 10;
 
 	private final static int FLAG_NULL = 0x0;
 	private final static int FLAG_HAS_MAPPOS = 0x1;
 	private final static int FLAG_HAS_HOMEPOS = 0x2;
-	private final static int FLAG_HAS_LASTPOS = 0x4;
+	private final static int FLAG_HAS_GPSPOS = 0x4;
 	private final static int FLAG_HAS_SOURCE = 0x8;
 	private final static int FLAG_HAS_TARGET = 0x10;
 	private final static int FLAG_HAS_PATH = 0x20;
@@ -41,7 +41,7 @@ public class AppState {
 	private boolean panMode;
 	private boolean navMode;
 
-	private GeoPoint lastPos;
+	private GeoPoint gpsPos;
 	private GeoPoint homePos;
 	private GeoPoint mapPos;
 	
@@ -67,8 +67,8 @@ public class AppState {
 	public void setSource(SdTouchPoint source) {this.source = source;}
 	public SdTouchPoint getTarget() {return target;}
 	public void setTarget(SdTouchPoint target) {this.target = target;}
-	public GeoPoint getLastPos() {return lastPos;}
-	public void setLastPos(GeoPoint lastPos) {this.lastPos = lastPos;}
+	public GeoPoint getGpsPos() {return gpsPos;}
+	public void setGpsPos(GeoPoint gpsPos) {this.gpsPos = gpsPos;}
 	public GeoPoint getHomePos() {return homePos;}
 	public void setHomePos(GeoPoint homePos) {this.homePos = homePos;}
 	public GeoPoint getMapPos() {return mapPos;}
@@ -104,11 +104,11 @@ public class AppState {
 
 			mapZoom = dis.readInt();
 
-			lastPos = null;
-			if ((flags & FLAG_HAS_LASTPOS) != 0) {
+			gpsPos = null;
+			if ((flags & FLAG_HAS_GPSPOS) != 0) {
 				double lat = dis.readDouble();
 				double lon = dis.readDouble();
-				lastPos = new GeoPoint(lat, lon);
+				gpsPos = new GeoPoint(lat, lon);
 			}
 			mapPos = null;
 			if ((flags & FLAG_HAS_MAPPOS) != 0) {
@@ -152,7 +152,7 @@ public class AppState {
 		boolean saved = false;
 		int flags = FLAG_NULL;
 
-		if (lastPos != null) flags |= FLAG_HAS_LASTPOS;
+		if (gpsPos != null) flags |= FLAG_HAS_GPSPOS;
 		if (mapPos != null) flags |= FLAG_HAS_MAPPOS;
 		if (homePos != null) flags |= FLAG_HAS_HOMEPOS;
 		if (source != null) flags |= FLAG_HAS_SOURCE;
@@ -176,9 +176,9 @@ public class AppState {
 			
 			dos.writeInt(mapZoom);
 
-			if ((flags & FLAG_HAS_LASTPOS) != 0) {
-				dos.writeDouble(lastPos.getLatitude());
-				dos.writeDouble(lastPos.getLongitude());
+			if ((flags & FLAG_HAS_GPSPOS) != 0) {
+				dos.writeDouble(gpsPos.getLatitude());
+				dos.writeDouble(gpsPos.getLongitude());
 			}
 			if ((flags & FLAG_HAS_MAPPOS) != 0) {
 				dos.writeDouble(mapPos.getLatitude());

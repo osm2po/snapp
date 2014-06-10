@@ -184,7 +184,7 @@ implements MarkerEditListener, AppListener {
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.menu_nav_home:
-			GeoPoint gp1 = appState.getLastPos();
+			GeoPoint gp1 = appState.getGpsPos();
 			GeoPoint gp2 = markersLayer.getMarkerPosition(HOME_MARKER);
 			if (gp1 != null && gp2 != null) {
 				appState.setTarget(null);
@@ -196,6 +196,11 @@ implements MarkerEditListener, AppListener {
 			break;
 			
 		case R.id.menu_sms_pos:
+//			this syntax has been taken from my book but doesnt work in callback
+//		    Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+//		    startActivityForResult(intent, CONTACT_SELECTED);
+
+//			this syntax is from the net
 		    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
 		    intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
 		    startActivityForResult(intent, CONTACT_SELECTED);
@@ -232,9 +237,6 @@ implements MarkerEditListener, AppListener {
 		            }
 		        }
 		    }
-			
-			
-			
 		}
 	}
 
@@ -306,7 +308,7 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public void onRouteLost() {
-		markersLayer.moveMarker(TOUCH_MARKER, appState.getLastPos()); // fake
+		markersLayer.moveMarker(TOUCH_MARKER, appState.getGpsPos()); // fake
 		onMarkerAction(SOURCE_MARKER); // Fake
 	}
 
@@ -336,6 +338,8 @@ implements MarkerEditListener, AppListener {
 		appState.setMapPos(gpMap);
 		GeoPoint gpHome = markersLayer.getMarkerPosition(HOME_MARKER);
 		appState.setHomePos(gpHome);
+		GeoPoint gpGps = markersLayer.getMarkerPosition(GPS_MARKER);
+		appState.setGpsPos(gpGps);
 		appState.setMapZoom(mapView.getMapPosition().getZoomLevel());
 
 		app.saveAppState();
@@ -349,6 +353,8 @@ implements MarkerEditListener, AppListener {
 		if (gpMap != null) mapView.setCenter(gpMap);
 		GeoPoint gpHome = appState.getHomePos();
 		if (gpHome != null) markersLayer.moveMarker(HOME_MARKER, gpHome);
+		GeoPoint gpGps = appState.getGpsPos();
+		if (gpGps != null) markersLayer.moveMarker(GPS_MARKER, gpGps);
 
 		tglCarOrBike.setChecked(!appState.isBikeMode());
 		tglToneOrQuiet.setChecked(!appState.isQuietMode());
