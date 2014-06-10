@@ -35,7 +35,7 @@ public class SmsReceiver extends BroadcastReceiver {
 					
 					// parse location
 					// FIXME Handle multiline message
-					Pattern pattern = Pattern.compile("(.*)(geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)", Pattern.MULTILINE);
+					Pattern pattern = Pattern.compile("(.*)(geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)");
 					Matcher matcher = pattern.matcher(message);
 					if (!matcher.matches()) return;
 					try { 
@@ -63,9 +63,9 @@ public class SmsReceiver extends BroadcastReceiver {
 					final NotificationManager notificationManager =	(NotificationManager)
 							context.getSystemService(Context.NOTIFICATION_SERVICE);
 					final Notification notification = new Notification(
-							R.drawable.ic_alert48, "Location Alert", System.currentTimeMillis());
+							R.drawable.ic_alert48, "I am here", System.currentTimeMillis());
 					final PendingIntent pendingIntent = PendingIntent.getActivity(context, message.hashCode(), startIntent, 0);
-					notification.setLatestEventInfo(context, "Alert", message, pendingIntent);
+					notification.setLatestEventInfo(context, "I am here", message, pendingIntent);
 					notificationManager.notify(message.hashCode(), notification);
 					
 //					context.startActivity(startIntent);

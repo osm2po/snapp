@@ -136,8 +136,6 @@ implements MarkerEditListener, AppListener {
 
 		app.setAppListener(this);
 		
-		restoreViewState();
-		
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			String msg = (String) extras.get("sms_msg");
@@ -145,10 +143,15 @@ implements MarkerEditListener, AppListener {
 			Double lat = (Double) extras.get("sms_lat");
 			Double lon = (Double) extras.get("sms_lon");
 			if (msg != null && num != null && lat != null && lon != null) {
-				toast("Alert from " + num + ":" + msg + "@" + lat + "," + lon);
+				toast("Position received from " + num + ": " + lat + "," + lon);
 				markersLayer.moveMarker(ALERT_MARKER, new GeoPoint(lat, lon));
+				appState.setMapZoom(15);
+				appState.setPanMode(false);
+				appState.setMapPos(new GeoPoint(lat, lon));
 			}
 		}
+
+		restoreViewState();
 	}
 
 	@Override
@@ -221,6 +224,7 @@ implements MarkerEditListener, AppListener {
 	public void onGpsSignal(double lat, double lon, float bearing) {
 		GeoPoint geoPoint = new GeoPoint(lat, lon);
 		markersLayer.moveMarker(GPS_MARKER, geoPoint, bearing);
+		appState.setGpsPos(geoPoint);
 		if (appState.isPanMode()) {
 			if (nGpsCalls == 0) mapView.setCenter(geoPoint);
 			if (++nGpsCalls > 10) nGpsCalls = 0;
@@ -249,6 +253,7 @@ implements MarkerEditListener, AppListener {
 
 		if (GPS_MARKER == marker) {
 			markersLayer.moveMarker(GPS_MARKER, geoPoint);
+			appState.setGpsPos(geoPoint);
 			app.navigate(lat, lon); // Simulation
 			return;
 		}
