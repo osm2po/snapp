@@ -35,7 +35,7 @@ public class SmsReceiver extends BroadcastReceiver {
 					
 					// parse location
 					// FIXME Handle multiline message
-					Pattern pattern = Pattern.compile("(.*)(geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)");
+					Pattern pattern = Pattern.compile("(.*)(snapp:geo:)([\\d\\.\\-]+),([\\d\\.\\-]+)");
 					Matcher matcher = pattern.matcher(message);
 					if (!matcher.matches()) return;
 					try { 

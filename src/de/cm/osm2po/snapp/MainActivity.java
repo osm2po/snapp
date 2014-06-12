@@ -144,16 +144,18 @@ implements MarkerEditListener, AppListener {
 			Double lon = (Double) extras.get("sms_lon");
 			if (msg != null && num != null && lat != null && lon != null) {
 				toast("Position received from " + num + ": " + lat + "," + lon);
+				markersLayer.moveMarker(TOUCH_MARKER, new GeoPoint(lat, lon));
 				markersLayer.moveMarker(ALERT_MARKER, new GeoPoint(lat, lon));
 				appState.setMapZoom(15);
 				appState.setPanMode(false);
 				appState.setMapPos(new GeoPoint(lat, lon));
+				markerSelectDialog.show(getFragmentManager(), "dlg_marker");
 			}
 		}
 
 		restoreViewState();
 	}
-
+	
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
