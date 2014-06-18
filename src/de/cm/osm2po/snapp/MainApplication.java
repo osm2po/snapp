@@ -179,7 +179,7 @@ public class MainApplication extends Application implements LocationListener, On
     private void calculateRoute() {
 		boolean bikeMode = appState.isBikeMode();
 		SdPath path = router.findPath(
-				appState.getSource(), appState.getTarget(), 0, 1.1, !bikeMode, !bikeMode);
+				appState.getSource(), appState.getTarget(), !bikeMode);
 		appState.setPath(path);
 		guide = (null == path) ? null : new SdGuide(
 				SdForecast.create(SdEvent.create(graph, path)));
