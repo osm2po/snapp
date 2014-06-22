@@ -175,7 +175,7 @@ public class MainApplication extends Application implements LocationListener, On
     	routingThread.start();
     	return true;
     }
-    
+
     private void calculateRoute() {
 		boolean bikeMode = appState.isBikeMode();
 		SdPath path = router.findPath(
@@ -188,6 +188,10 @@ public class MainApplication extends Application implements LocationListener, On
     
     public boolean isGuiding() {
     	return guide != null;
+    }
+    
+    public void cancelRouteCalculation() {
+    	router.cancel();
     }
     
     /******************************** GPS *********************************/

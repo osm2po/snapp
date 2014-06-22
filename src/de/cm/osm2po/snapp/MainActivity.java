@@ -65,7 +65,14 @@ implements MarkerEditListener, AppListener {
 		
 		toast("Starting Activity");
 
-		progressDialog = new ProgressDialog(this, R.style.StyledDialog);
+		progressDialog = new ProgressDialog(this, R.style.StyledDialog) {
+			@Override
+			public void onBackPressed() {
+				super.onBackPressed();
+				toast("Calculation cancelled");
+				app.cancelRouteCalculation();
+			}
+		};
 		progressDialog.setMessage("Calculating Route...");
 
 		markerSelectDialog = new MarkerSelectDialog();
