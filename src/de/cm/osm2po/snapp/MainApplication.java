@@ -68,7 +68,7 @@ public class MainApplication extends Application implements LocationListener, On
 
     	toast("Starting Application");
     	
-    	File pathCacheFile = new File(getCacheDir(), "osm2po.sd");
+    	File pathCacheFile = new File(getCacheDir(), "snapp.tmp");
 
     	graph = new SdGraph(new File(getAppDir(), "snapp.gpt"));
     	mapFile = new File(getAppDir(), "snapp.map");
