@@ -171,27 +171,26 @@ public class MainApplication extends Application implements LocationListener, On
 				try {calculateRoute();} catch (Exception e) {}
 			}
 		});
-    	
+    	routingThread.setPriority(Thread.MAX_PRIORITY);
     	routingThread.start();
     	return true;
     }
 
     private void calculateRoute() {
-		boolean bikeMode = appState.isBikeMode();
 		SdPath path = router.findPath(
-				appState.getSource(), appState.getTarget(), !bikeMode);
+				appState.getSource(), appState.getTarget(), !appState.isBikeMode());
 		appState.setPath(path);
 		guide = (null == path) ? null : new SdGuide(
 				SdForecast.create(SdEvent.create(graph, path)));
 		if (appListener != null) appListener.onRouteChanged();
     }
     
-    public boolean isGuiding() {
-    	return guide != null;
-    }
-    
     public void cancelRouteCalculation() {
     	router.cancel();
+    }
+    
+    public String getStatistic() {
+    	return router.getStatistics().toString();
     }
     
     /******************************** GPS *********************************/

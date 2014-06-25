@@ -68,12 +68,14 @@ implements MarkerEditListener, AppListener {
 		progressDialog = new ProgressDialog(this, R.style.StyledDialog) {
 			@Override
 			public void onBackPressed() {
-				super.onBackPressed();
-				toast("Calculation cancelled");
 				app.cancelRouteCalculation();
+				progressDialog.dismiss();
+				toast("Calculation cancelled");
+				toast(app.getStatistic());
 			}
 		};
 		progressDialog.setMessage("Calculating Route...");
+		progressDialog.setCancelable(false);
 
 		markerSelectDialog = new MarkerSelectDialog();
 
@@ -272,7 +274,8 @@ implements MarkerEditListener, AppListener {
 			return;
 		}
 
-		SdTouchPoint tp = SdTouchPoint.create(app.getGraph(), (float)lat, (float)lon);
+		SdTouchPoint tp = SdTouchPoint.create(
+				app.getGraph(), (float)lat, (float)lon, !appState.isBikeMode());
 
 		if (marker == SOURCE_MARKER) {
 			appState.setSource(tp);
@@ -311,17 +314,18 @@ implements MarkerEditListener, AppListener {
 
 	@Override
 	public void onRouteChanged() {
-		SdPath path = appState.getPath();
-		routesLayer.drawPath(app.getGraph(), path);
-		if (null == path) {
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				progressDialog.dismiss();
+				SdPath path = appState.getPath();
+				if (null == path) {
 					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()));
 				}
-			});
-		}
-		progressDialog.dismiss();
+				toast(app.getStatistic());
+				routesLayer.drawPath(app.getGraph(), path);
+			}
+		});
 	}
 	
 	private void saveViewState() {
