@@ -76,8 +76,9 @@ public class MainApplication extends Application implements LocationListener, On
     	router = new SdRouter(graph, pathCacheFile);
 
     	SdPath path = appState.getPath();
+    	boolean bikeMode = appState.isBikeMode();
 		guide = (null == path) ? null : new SdGuide(
-				SdForecast.create(SdEvent.create(graph, path)));
+				SdForecast.create(SdEvent.create(graph, path, !bikeMode, !bikeMode)));
     	
     	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
@@ -177,11 +178,12 @@ public class MainApplication extends Application implements LocationListener, On
     }
 
     private void calculateRoute() {
+    	boolean bikeMode = appState.isBikeMode();
 		SdPath path = router.findPath(
-				appState.getSource(), appState.getTarget(), !appState.isBikeMode());
+				appState.getSource(), appState.getTarget(), !bikeMode);
 		appState.setPath(path);
 		guide = (null == path) ? null : new SdGuide(
-				SdForecast.create(SdEvent.create(graph, path)));
+				SdForecast.create(SdEvent.create(graph, path, !bikeMode, !bikeMode)));
 		if (appListener != null) appListener.onRouteChanged();
     }
     
