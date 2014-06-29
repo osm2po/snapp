@@ -41,6 +41,8 @@ public class MainActivity extends MapActivity
 implements MarkerEditListener, AppListener {
 
 	private final static int CONTACT_SELECTED = 4711;
+	private final static int ACTION_MOVE = 1;
+	private final static int ACTION_GOTO = 2;
 	
 	private MainApplication app;
 	private AppState appState;
@@ -158,7 +160,7 @@ implements MarkerEditListener, AppListener {
 				appState.setMapZoom(15);
 				appState.setPanMode(false);
 				appState.setMapPos(new GeoPoint(lat, lon));
-				markerSelectDialog.show(getFragmentManager(), "dlg_marker");
+				markerSelectDialog.show(ACTION_MOVE, getFragmentManager());
 			}
 		}
 
@@ -208,10 +210,14 @@ implements MarkerEditListener, AppListener {
 			if (gp1 != null && gp2 != null) {
 				appState.setTarget(null);
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp1);
-				onMarkerAction(SOURCE_MARKER); // fake
+				onMarkerAction(SOURCE_MARKER, ACTION_MOVE); // fake
 				markersLayer.moveMarker(Marker.TOUCH_MARKER, gp2);
-				onMarkerAction(TARGET_MARKER); // fake
+				onMarkerAction(TARGET_MARKER, ACTION_MOVE); // fake
 			}
+			break;
+			
+		case R.id.menu_goto_marker: 
+			markerSelectDialog.show(ACTION_GOTO, getFragmentManager());
 			break;
 			
 		case R.id.menu_sms_pos:
@@ -252,12 +258,32 @@ implements MarkerEditListener, AppListener {
 	@Override
 	public void onPositionRequest(GeoPoint geoPoint) {
 		if (!appState.isNavMode()) {
-			markerSelectDialog.show(getFragmentManager(), "dlg_marker");
+			markerSelectDialog.show(ACTION_MOVE, getFragmentManager());
 		}
 	}
 
 	@Override
-	public void onMarkerAction(Marker marker) {
+	public void onMarkerAction(Marker marker, int action) {
+		switch (action) {
+		case ACTION_MOVE:
+			moveMarker(marker);
+			break;
+		default:
+			gotoMarker(marker);
+			break;
+		}
+	}
+	
+	public void gotoMarker(Marker marker) {
+		GeoPoint geoPoint = markersLayer.getMarkerPosition(marker);
+		if (geoPoint != null) {
+			mapView.setCenter(geoPoint);
+		} else {
+			toast("Marker not yet set");
+		}
+	}
+
+	public void moveMarker(Marker marker) {
 		GeoPoint geoPoint = markersLayer.getLastTouchPosition();
 		double lat = geoPoint.getLatitude();
 		double lon = geoPoint.getLongitude();
@@ -303,7 +329,7 @@ implements MarkerEditListener, AppListener {
 	@Override
 	public void onRouteLost() {
 		markersLayer.moveMarker(TOUCH_MARKER, appState.getGpsPos()); // fake
-		onMarkerAction(SOURCE_MARKER); // Fake
+		onMarkerAction(SOURCE_MARKER, ACTION_MOVE); // Fake
 	}
 
 
@@ -379,7 +405,7 @@ implements MarkerEditListener, AppListener {
 				mapView.setCenter(gpAddress);
 				mapView.getController().setZoom(14);
 				markersLayer.moveMarker(TOUCH_MARKER, gpAddress);
-				markerSelectDialog.show(getFragmentManager(), "dlg_marker");
+				markerSelectDialog.show(ACTION_MOVE, getFragmentManager());
 				return true;
 			} else {
 				toast("Address not found");

@@ -7,6 +7,7 @@ import static de.cm.osm2po.snapp.Marker.TARGET_MARKER;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.app.FragmentManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,7 +18,7 @@ import android.widget.ImageButton;
 
 public class MarkerSelectDialog extends DialogFragment implements OnClickListener {
 	
-	MarkerEditListener listener;
+	private int action;
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -44,6 +45,11 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 		return  dialog;
 	}
 	
+	public void show(int action, FragmentManager fm) {
+		this.action = action;
+		super.show(fm, "dlg_marker");
+	}
+	
 	@Override
 	public void onClick(View v) {
 		dismiss();
@@ -51,10 +57,10 @@ public class MarkerSelectDialog extends DialogFragment implements OnClickListene
 		if (activity instanceof MarkerEditListener) {
 			MarkerEditListener msl = (MarkerEditListener) activity;
 			switch (v.getId()) {
-			case R.id.btn_source: msl.onMarkerAction(SOURCE_MARKER); break;
-			case R.id.btn_target: msl.onMarkerAction(TARGET_MARKER); break;
-			case R.id.btn_gps_simu: msl.onMarkerAction(GPS_MARKER); break;
-			case R.id.btn_home: msl.onMarkerAction(HOME_MARKER); break;
+			case R.id.btn_source: msl.onMarkerAction(SOURCE_MARKER, action); break;
+			case R.id.btn_target: msl.onMarkerAction(TARGET_MARKER, action); break;
+			case R.id.btn_gps_simu: msl.onMarkerAction(GPS_MARKER, action); break;
+			case R.id.btn_home: msl.onMarkerAction(HOME_MARKER, action); break;
 			}
 		}
 	}

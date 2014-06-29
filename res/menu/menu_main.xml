@@ -10,4 +10,9 @@
         android:orderInCategory="2"
         android:title="@string/menu_sms_pos"/>
     
+    <item
+        android:id="@+id/menu_goto_marker"
+        android:orderInCategory="2"
+        android:title="@string/menu_goto_marker"/>
+
 </menu>

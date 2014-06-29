@@ -5,6 +5,7 @@
     
     <string name="menu_nav_home">Navigate Home</string>
     <string name="menu_sms_pos">SMS Position</string>
+    <string name="menu_goto_marker">Goto Marker</string>
     
     <string name="btn_source">Source</string>
     <string name="btn_target">Target</string>
