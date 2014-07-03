@@ -1,5 +1,6 @@
 package de.cm.osm2po.snapp;
 
+import static android.location.LocationManager.GPS_PROVIDER;
 import static android.speech.tts.TextToSpeech.QUEUE_ADD;
 import static android.telephony.TelephonyManager.CALL_STATE_IDLE;
 import static android.telephony.TelephonyManager.CALL_STATE_OFFHOOK;
@@ -43,7 +44,7 @@ public class MainApplication extends Application implements LocationListener, On
 	
 	private final SmsManager smsMan = SmsManager.getDefault();
 
-	private LocationManager gps;
+	private LocationManager locman;
 	private TextToSpeech tts;
 	private SdGraph graph;
 	private SdGuide guide;
@@ -52,6 +53,7 @@ public class MainApplication extends Application implements LocationListener, On
 	private Thread routingThread;
 	private SdRouter router;
 	private int nJitters;
+	private boolean gpsProviderActive;
 
 	private AppState appState;
 	
@@ -80,8 +82,13 @@ public class MainApplication extends Application implements LocationListener, On
 		guide = (null == path) ? null : new SdGuide(
 				SdForecast.create(SdEvent.create(graph, path, !bikeMode, !bikeMode)));
     	
-    	gps = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    	gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, this);
+    	locman = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    	
+    	locman.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+    	locman.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+    	
+    	String locmans = locman.getProviders(false).toString();
+    	toast("LocationProviders:\n" + locmans);
 
     	tts = new TextToSpeech(this, this);
     	registerTracks();
@@ -139,7 +146,7 @@ public class MainApplication extends Application implements LocationListener, On
     }
     
     public boolean isGpsOn() {
-    	return gps.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    	return locman.isProviderEnabled(GPS_PROVIDER);
     }
     
     public AppState getAppState() {
@@ -256,6 +263,15 @@ public class MainApplication extends Application implements LocationListener, On
     
 	@Override
 	public void onLocationChanged(Location location) { // from GPS
+		// WTF Workaround - onStatusChanged() does not fire on my phone
+		String callingProvider = location.getProvider();
+		if (GPS_PROVIDER.equals(callingProvider)) {
+			if (!gpsProviderActive) speak("G P S fixed");
+			gpsProviderActive = true;
+		} else if (gpsProviderActive) {
+			return; // Prefer GPS- to NETWORK-Provider
+		}
+		
 		double lat = location.getLatitude();
 		double lon = location.getLongitude();
 		float bearing = location.getBearing();
@@ -266,14 +282,20 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onProviderDisabled(String provider) {
+		toast("Provider " + provider + " disabled");
+		if (GPS_PROVIDER.equals(provider)) {
+			gpsProviderActive = false;
+		}
 	}
 
 	@Override
 	public void onProviderEnabled(String provider) {
+		toast("Provider " + provider + " enabled");
 	}
 
 	@Override
 	public void onStatusChanged(String provider, int status, Bundle extras) {
+		// WTF This Event does not fire on my Mobile
 	}
 
 	/******************************** TTS *********************************/

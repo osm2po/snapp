@@ -73,7 +73,6 @@ implements MarkerEditListener, AppListener {
 				app.cancelRouteCalculation();
 				progressDialog.dismiss();
 				toast("Calculation cancelled");
-				toast(app.getStatistic());
 			}
 		};
 		progressDialog.setMessage("Calculating Route...");
