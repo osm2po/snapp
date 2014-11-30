@@ -87,8 +87,8 @@ public class MainApplication extends Application implements LocationListener, On
     	locman.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     	locman.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
     	
-    	String locmans = locman.getProviders(false).toString();
-    	toast("LocationProviders:\n" + locmans);
+    	// String locmans = locman.getProviders(false).toString();
+    	// toast("LocationProviders:\n" + locmans);
 
     	tts = new TextToSpeech(this, this);
     	registerTracks();
@@ -198,10 +198,6 @@ public class MainApplication extends Application implements LocationListener, On
     	router.cancel();
     }
     
-    public String getStatistic() {
-    	return router.getStatistics().toString();
-    }
-    
     /******************************** GPS *********************************/
     
     public int getKmh() {
@@ -282,7 +278,7 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onProviderDisabled(String provider) {
-		toast("Provider " + provider + " disabled");
+		// toast("Provider " + provider + " disabled");
 		if (GPS_PROVIDER.equals(provider)) {
 			gpsProviderActive = false;
 		}
@@ -290,7 +286,7 @@ public class MainApplication extends Application implements LocationListener, On
 
 	@Override
 	public void onProviderEnabled(String provider) {
-		toast("Provider " + provider + " enabled");
+		// toast("Provider " + provider + " enabled");
 	}
 
 	@Override
@@ -350,7 +346,7 @@ public class MainApplication extends Application implements LocationListener, On
 		public void onCallStateChanged(int state, String incomingNumber) {
 			switch (state) {
 			case CALL_STATE_RINGING:
-				speak("Telefon " + incomingNumber);
+				// speak("Telefon " + incomingNumber);
 				break;
 			case CALL_STATE_OFFHOOK:
 				appState.saveAppState(graph.getId());

@@ -37,18 +37,6 @@
 	            android:textSize="@dimen/font_small" />
 	        	        	        
 	        <ToggleButton
-	            android:id="@+id/tglCarOrBike"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:minHeight="12dp"
-	            android:minWidth="36dp"
-	            android:padding="@dimen/padding_none"
-	            android:textColor="@color/white"
-	            android:textOn="@string/tgl_car"
-	            android:textOff="@string/tgl_bike"
-	            android:textSize="@dimen/font_small" />
-
-	        <ToggleButton
 	            android:id="@+id/tglToneOrQuiet"
 	            android:layout_width="wrap_content"
 	            android:layout_height="wrap_content"
@@ -80,7 +68,19 @@
 	            android:textColor="@color/white"
 	            android:textSize="@dimen/font_small"
 	            android:textStyle="bold" />
-	        
+
+	        <ToggleButton
+	            android:id="@+id/tglCarOrBike"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:minHeight="12dp"
+	            android:minWidth="36dp"
+	            android:padding="@dimen/padding_none"
+	            android:textColor="@color/white"
+	            android:textOn="@string/tgl_car"
+	            android:textOff="@string/tgl_bike"
+	            android:textSize="@dimen/font_small" />
+	        	        	        
     </LinearLayout>
 
     <org.mapsforge.android.maps.MapView

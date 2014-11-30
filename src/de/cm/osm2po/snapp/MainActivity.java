@@ -65,7 +65,7 @@ implements MarkerEditListener, AppListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		toast("Starting Activity");
+		// toast("Starting Activity");
 
 		progressDialog = new ProgressDialog(this, R.style.StyledDialog) {
 			@Override
@@ -347,7 +347,6 @@ implements MarkerEditListener, AppListener {
 				if (null == path) {
 					app.speak(toast(MSG_ERR_ROUTE_CALC.getMessage()));
 				}
-				toast(app.getStatistic());
 				routesLayer.drawPath(app.getGraph(), path);
 			}
 		});
