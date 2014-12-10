@@ -83,9 +83,12 @@ public class MainApplication extends Application implements LocationListener, On
 				SdForecast.create(SdEvent.create(graph, path, !bikeMode, !bikeMode)));
     	
     	locman = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    	
-    	locman.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-    	locman.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+
+    	// Important precheck. Emulator does not provide NETWORK, eg.
+    	if (locman.getProvider(LocationManager.GPS_PROVIDER) != null)
+    		locman.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+    	if (locman.getProvider(LocationManager.NETWORK_PROVIDER) != null)
+    		locman.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
     	
     	// String locmans = locman.getProviders(false).toString();
     	// toast("LocationProviders:\n" + locmans);
